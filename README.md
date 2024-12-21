@@ -1,8 +1,4 @@
-<img src="data/images/chariot-6016921_1920.jpg" width="120px" />
-<img src="data/images/empress-6016923_1920.jpg" width="120px" />
-<img src="data/images/hermit-6016941_1920.jpg"  width="120px" />
-<img src="data/images/hanged-man-6016939_1920.jpg"  width="120px" />
-<img src="data/images/tarot-6129686_1920.jpg"  width="120px" />
+<img src="data/images/chariot-6016921_1920.jpg" width="120px" /> <img src="data/images/empress-6016923_1920.jpg" width="120px" /> <img src="data/images/hermit-6016941_1920.jpg"  width="120px" /> <img src="data/images/hanged-man-6016939_1920.jpg"  width="120px" /> <img src="data/images/tarot-6129686_1920.jpg"  width="120px" />
 
 # Tarot
 A mystic programming language.
