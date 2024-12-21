@@ -1,0 +1,13 @@
+# gitignore every file and directory
+*
+
+# except the following files and directories
+!.gitignore
+!.editorconfig
+!Makefile
+!LICENSE.txt
+!README.md
+!data/
+!data/**
+!src/
+!src/**

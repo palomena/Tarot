@@ -1,0 +1,34 @@
+/* TAROT example program
+ * A basic Mandelbrot fractal generator
+ */
+
+function main() {
+	constant width  = 80.0f;
+	constant height = 40.0f;
+	constant max = 10.00f;
+	let row = 0.00f;
+	while row < height {
+		let col = 0.00f;
+		while col < width {
+			let c_re = (col - width/2.00f)*4.00f/width;
+			let c_im = (row - height/2.00f)*4.00f/width;
+			let x = 0.00f;
+			let y = 0.00f;
+			let iteration = 0.00f;
+			while (x*x+y*y <= 4.0f and iteration < max) {
+				let x_new = x*x - y*y + c_re;
+				y = 2.00f*x*y + c_im;
+				x = x_new;
+				iteration = iteration + 1.00f;
+			}
+			if iteration < max {
+				print(" ");
+			} else {
+				print("x");
+			}
+			col = col + 1.00f;
+		}
+		row = row + 1.00f;
+		print("\n");
+	}
+}
