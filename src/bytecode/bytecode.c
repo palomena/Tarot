@@ -1149,8 +1149,8 @@ static void generate_list(
 	struct tarot_node *node
 ) {
 	size_t i;
-	for (i = 0; i < List(node)->num_elements; i++) {
-		generate(generator, List(node)->elements[i]);
+	for (i = List(node)->num_elements; i > 0; i--) {
+		generate(generator, List(node)->elements[i-1]);
 	}
 	write_instruction(generator, OP_PushList);
 	write_argument(generator, List(node)->num_elements);

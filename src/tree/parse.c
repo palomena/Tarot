@@ -1226,21 +1226,64 @@ static struct tarot_node* parse_match(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
-static struct tarot_node* parse_assign_or_expression(struct tarot_parser *parser) {
+static struct tarot_node* parse_special_assignment(
+	struct tarot_parser *parser,
+	struct tarot_node *identifier,
+	enum tarot_token_kind kind,
+	enum ArithmeticExpressionOperator operator
+) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;
+	if (match(parser, kind, &token)) {
+		struct tarot_node *op = tarot_create_node(NODE_ArithmeticExpression, &token.position);
+		ArithmeticExpression(op)->left_operand = tarot_copy_node(identifier);
+		ArithmeticExpression(op)->right_operand = parse_expression(parser);
+		ArithmeticExpression(op)->operator = operator;
+		node = tarot_create_node(NODE_Assignment, &token.position);
+		Assignment(node)->identifier = identifier;
+		Assignment(node)->value = op;
+		expect(parser, TAROT_TOK_SEMICOLON);
+	}
+	return result(parser, node);
+}
+
+static struct tarot_node* parse_assignment(
+	struct tarot_parser *parser,
+	struct tarot_node *identifier
+) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match(parser, TAROT_TOK_ASSIGN, &token)) {
+		node = tarot_create_node(NODE_Assignment, &token.position);
+		Assignment(node)->identifier = identifier;
+		Assignment(node)->value = parse_expression(parser);
+		expect(parser, TAROT_TOK_SEMICOLON);
+	} else {
+		(node = parse_special_assignment(parser, identifier, TAROT_TOK_ASSIGN_ADD, EXPR_ADD)) or
+		(node = parse_special_assignment(parser, identifier, TAROT_TOK_ASSIGN_SUB, EXPR_SUBTRACT)) or
+		(node = parse_special_assignment(parser, identifier, TAROT_TOK_ASSIGN_MUL, EXPR_MULTIPLY)) or
+		(node = parse_special_assignment(parser, identifier, TAROT_TOK_ASSIGN_DIV, EXPR_DIVIDE));
+	}
+	return result(parser, node);
+}
+
+static struct tarot_node* parse_expression_statement(
+	struct tarot_parser *parser,
+	struct tarot_node *expression
+) {
+	struct tarot_node *node = NULL;
+	node = tarot_create_node(NODE_ExpressionStatement, position_of(expression));
+	ExprStatement(node)->expression = expression;
+	expect(parser, TAROT_TOK_SEMICOLON);
+	return node;
+}
+
+static struct tarot_node* parse_assign_or_expression(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
 	struct tarot_node *identifier = parse_primary_expression(parser);
 	if (identifier != NULL) {
-		if (match(parser, TAROT_TOK_ASSIGN, &token)) {
-			node = tarot_create_node(NODE_Assignment, &token.position);
-			Assignment(node)->identifier = identifier;
-			Assignment(node)->value = parse_expression(parser);
-			expect(parser, TAROT_TOK_SEMICOLON);
-		} else {
-			node = tarot_create_node(NODE_ExpressionStatement, position_of(identifier));
-			ExprStatement(node)->expression = identifier;
-			expect(parser, TAROT_TOK_SEMICOLON);
-		}
+		(node = parse_assignment(parser, identifier)) or
+		(node = parse_expression_statement(parser, identifier));
 	}
 	return result(parser, node);
 }

@@ -108,6 +108,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		switch (opcode) {
 			union tarot_value a, b, z;
+			size_t i, length;
 
 		halt:
 		case OP_Halt:
@@ -726,7 +727,23 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		 */
 
 		case OP_PushList:
+			length = tarot_read16bit(ip, &ip);
+			z.List = tarot_create_list(sizeof(z), length, NULL);
+			for (i = 0; i < length; i++) {
+				a = tarot_pop(thread);
+				tarot_list_append(&z.List, &a);
+			}
+			tarot_push(thread, z);
+			break;
+
 		case OP_ListIndex:
+			a = tarot_pop(thread);
+			z = tarot_pop(thread);
+			i = tarot_integer_to_short(a.Integer);
+			b = *(union tarot_value*)tarot_list_element(z.List, i);
+			tarot_push(thread, b);
+			break;
+
 		case OP_PushDict:
 		case OP_DictIndex:
 			break;
