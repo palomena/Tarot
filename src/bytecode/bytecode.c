@@ -276,12 +276,18 @@ static void disassemble(
 			print_name(stream, read_string(bytecode, read_argument(&ip)));
 			break;
 		case OP_StoreValue:
+		case OP_StoreInteger:
+		case OP_StoreRational:
+		case OP_StoreString:
 		case OP_LoadValue:
 		case OP_LoadArgument:
 		case OP_Goto:
 		case OP_GotoIfFalse:
 		case OP_PushList:
 		case OP_PushDict:
+		case OP_FreeInteger:
+		case OP_FreeRational:
+		case OP_FreeString:
 			print_argument(stream, read_argument(&ip));
 			break;
 		case OP_CastToFloat:
@@ -398,6 +404,7 @@ static void print_data_section(
 	tarot_indent(stream, -1);
 }
 
+/*const char* get_function_name(struct tarot_function *function)*/
 
 static void print_function_section(
 	struct tarot_iostream *stream,
@@ -710,7 +717,7 @@ static void generate_module(
 ) {
 	if (Module(node)->is_root) {
 		write_instruction(generator, OP_CallFunction);
-		write_argument(generator, 0); /* main function is always at index 0 */
+		write_argument(generator, 0); /* main function is always at index 0 */ /* UNLESS ITS NOT CONTAINED IN THE SOURCECODE LMAO FIXME! */
 		write_instruction(generator, OP_Halt);
 	}
 	while (node != NULL) {
@@ -1220,7 +1227,6 @@ static void generate_return(
 	generate(generator, ReturnStatement(node)->expression);
 	write_instruction(generator, OP_ReturnValue);
 	write_argument(generator, Type(type_of(ReturnStatement(node)->expression))->type);
-	write_instruction(generator, OP_PopRegion);
 	write_instruction(generator, OP_Return);
 }
 
@@ -1249,9 +1255,33 @@ static void generate_function(
 ) {
 	register_function(generator, node);
 	write_debug(generator, name_of(node));
-	write_instruction(generator, OP_PushRegion);
 	generate(generator, FunctionDefinition(node)->block);
-	write_instruction(generator, OP_PopRegion);
+	{
+		size_t i;
+		struct tarot_list *scope = FunctionDefinition(node)->scope;
+		for (i = 0; i < tarot_list_length(scope); i++) {
+			struct tarot_node *symbol = *(struct tarot_node**)tarot_list_element(scope, i);
+			if (kind_of(symbol) != NODE_Variable) {
+				continue;
+			}
+			switch (Type(type_of(symbol))->type) {
+				default:
+					break;
+				case TYPE_INTEGER:
+					write_instruction(generator, OP_FreeInteger);
+					write_argument(generator, index_of(symbol));
+					break;
+				case TYPE_RATIONAL:
+					write_instruction(generator, OP_FreeRational);
+					write_argument(generator, index_of(symbol));
+					break;
+				case TYPE_STRING:
+					write_instruction(generator, OP_FreeString);
+					write_argument(generator, index_of(symbol));
+					break;
+			}
+		}
+	}
 	write_instruction(generator, OP_Return);
 }
 
@@ -1322,21 +1352,52 @@ static void generate_while(
 	struct tarot_node *node
 ) {
 	WhileLoop(node)->start = generator->offset.instructions;
+	write_instruction(generator, OP_PushRegion);
 	generate(generator, WhileLoop(node)->condition);
 	write_instruction(generator, OP_GotoIfFalse);
 	write_argument(generator, WhileLoop(node)->end);
+	write_instruction(generator, OP_PushRegion);
 	generate(generator, WhileLoop(node)->block);
+	write_instruction(generator, OP_PopRegion);
+	write_instruction(generator, OP_PopRegion);
 	write_instruction(generator, OP_Goto);
 	write_argument(generator, WhileLoop(node)->start);
 	WhileLoop(node)->end = generator->offset.instructions;
+	write_instruction(generator, OP_PopRegion);
 }
 
 static void generate_assignment(
 	struct tarot_generator *generator,
 	struct tarot_node *node
 ) {
+	bool must_copy = false;
 	generate(generator, Assignment(node)->value);
-	write_instruction(generator, OP_StoreValue);
+	if (kind_of(Assignment(node)->value) == NODE_Identifier) {
+		must_copy = true;
+	}
+	switch (Type(type_of(Assignment(node)->value))->type) {
+		default:
+			write_instruction(generator, OP_StoreValue);
+			break;
+		case TYPE_INTEGER:
+			if (must_copy) {
+				write_instruction(generator, OP_CopyInteger);
+			}
+			write_instruction(generator, OP_StoreInteger);
+			break;
+		case TYPE_RATIONAL:
+			if (must_copy) {
+				write_instruction(generator, OP_CopyRational);
+			}
+			write_instruction(generator, OP_StoreRational);
+			break;
+		case TYPE_STRING:
+			if (must_copy) {
+				write_instruction(generator, OP_CopyString);
+			}
+			write_instruction(generator, OP_StoreString);
+			break;
+	}
 	write_argument(generator, index_of(Assignment(node)->identifier));
 }
 
@@ -1388,8 +1449,28 @@ static void generate_variable(
 	struct tarot_generator *generator,
 	struct tarot_node *node
 ) {
+	bool must_copy = false;
 	generate(generator, Variable(node)->value);
-	write_instruction(generator, OP_StoreValue);
+	if (kind_of(Variable(node)->value) == NODE_Identifier) {
+		must_copy = true;
+	}
+	switch (Type(type_of(Variable(node)->value))->type) {
+		default:
+			write_instruction(generator, OP_StoreValue);
+			break;
+		case TYPE_INTEGER:
+			if (must_copy) {
+				write_instruction(generator, OP_CopyInteger);
+			}
+			write_instruction(generator, OP_StoreInteger);
+			break;
+		case TYPE_STRING:
+			if (must_copy) {
+				write_instruction(generator, OP_CopyString);
+			}
+			write_instruction(generator, OP_StoreString);
+			break;
+	}
 	write_argument(generator, index_of(node));
 }
 

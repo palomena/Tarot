@@ -1,0 +1,14 @@
+function fac(n: Integer) -> Integer {
+	if n > 1 {
+		return n*fac(n-1);
+	}
+	return 1;
+}
+
+function main() {
+	let i = 0;
+	while i < 10 {
+		println(f"fac({i})={fac(i)}");
+		i = i + 1;
+	}
+}

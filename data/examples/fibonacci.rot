@@ -1,0 +1,20 @@
+function fib(n: Integer) {
+	let a = 0;
+	let b = 1;
+	let i = 0;
+	while i < n {
+		println(a);
+		a = a + b;
+		b = a;
+		i = i + 1;
+	}
+}
+
+function fibr(n: Integer) -> Integer {
+	if n <= 0 {
+		return 0;
+	} else if n == 1 {
+		return 1;
+	}
+	return fibr(n-1) + fibr(n-2);
+}

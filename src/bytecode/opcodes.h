@@ -37,6 +37,8 @@ enum tarot_opcode {
 	/* Integer */
 	OP_PushInteger,
 	OP_CopyInteger,
+	OP_FreeInteger,
+	OP_StoreInteger,
 	OP_CastToInteger,
 	OP_IntegerAbs,
 	OP_IntegerNeg,
@@ -70,6 +72,8 @@ enum tarot_opcode {
 	/* Rational */
 	OP_PushRational,
 	OP_CopyRational,
+	OP_StoreRational,
+	OP_FreeRational,
 	OP_CastToRational,
 	OP_RationalAbs,
 	OP_RationalNeg,
@@ -87,6 +91,8 @@ enum tarot_opcode {
 	/* String */
 	OP_PushString,
 	OP_CopyString,
+	OP_StoreString,
+	OP_FreeString,
 	OP_CastToString,
 	OP_StringEquality,
 	OP_StringContains,

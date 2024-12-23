@@ -11,6 +11,7 @@ typedef void tarot_rational;
 
 extern tarot_rational* tarot_create_rational(void);
 extern void tarot_free_rational(tarot_rational *rational);
+extern void tarot_release_rational(tarot_rational *rational);
 extern void tarot_initialize_rational(tarot_rational *rational);
 extern tarot_rational* tarot_copy_rational(tarot_rational *value);
 extern tarot_rational* tarot_create_rational_from_integers(

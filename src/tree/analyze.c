@@ -137,6 +137,7 @@ struct tarot_analyzer {
 	size_t function_index;
 	size_t foreign_function_index;
 	size_t variable_index;
+	bool has_main_function;
 	bool panic;
 };
 
@@ -154,6 +155,7 @@ static void index_node(
 		case NODE_Function:
 			if (tarot_match_string(name_of(node), "main")) {
 				FunctionDefinition(node)->index = 0;
+				analyzer->has_main_function = true;
 			} else {
 				FunctionDefinition(node)->index = ++analyzer->function_index;
 			}
@@ -240,7 +242,12 @@ static void leave2(struct tarot_node **nodeptr, struct scope_stack *stack, void 
 
 static void run_pass_2(struct tarot_node *ast) {
 	struct tarot_analyzer analyzer;
+	memset(&analyzer, 0, sizeof(analyzer));
 	tarot_traverse(&ast, enter2, leave2, &analyzer);
+	if (not analyzer.has_main_function) {
+		tarot_error("Module does not expose a main function!");
+		Module(ast)->num_errors++;
+	}
 }
 
 void tarot_analyze_ast(struct tarot_node *root) {

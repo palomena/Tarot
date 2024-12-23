@@ -1,26 +1,20 @@
-function foo(a: Integer, b: Integer) -> Integer {
-	return a+b*2;
-}
-
-function moo(a: Integer) -> Integer {
-	if a < 6 {
-		return 31415.9f;
-	} else {
-		return foo(a, a);
+function fib(n: Integer) {
+	let a = 0;
+	let b = 1;
+	let i = 0;
+	while i < n {
+		println(a);
+		let temp = a;
+		a = b;
+		b = temp + b;
+		i = i + 1;
 	}
 }
 
-# This is absolutely needed or memory will be wasted big time!
-# push pop region on every {}
-# requires to track in which region each variable lies
-# e.g. i = i + 1 creates an alloc in the temp region, thereby
-# invalidating i < 10 on subsequent iterations!
-# Therefore we'd need a modified OP_Store with the relative region as param
+function oops(n: Integer) -> Integer {
+	return n;
+}
 
 function main() {
-	let i = 0;
-	while i < 10 {
-		i = i + 1;
-		print(f"i: {i}**2 = {i**2}");
-	}
+	fib(oops(15));
 }

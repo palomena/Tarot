@@ -49,6 +49,12 @@ int tarot_exit(void) {
 				tarot_num_frees()
 			);
 		}
+		if (tarot_num_active_regions() > 0) {
+			tarot_warning(
+				"Memory Region still active: %zu!",
+				tarot_num_active_regions()
+			);
+		}
 		tarot_fclose(tarot_stdout);
 		tarot_fclose(tarot_stderr);
 		tarot_fclose(tarot_stdin);

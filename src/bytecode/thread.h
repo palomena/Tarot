@@ -56,6 +56,7 @@ struct stackframe {
 	void *return_address;
 	struct tarot_function *function;
 	size_t baseptr;
+	size_t ptr;
 };
 
 struct tarot_callstack {
@@ -81,6 +82,8 @@ extern struct tarot_thread* create_thread(uint8_t *instruction_pointer);
  * Frees a stack and it's associated memory.
  */
 extern void free_thread(struct tarot_thread *thread);
+
+extern void print_thread(struct tarot_thread *thread);
 
 #endif /* TAROT_SOURCE */
 

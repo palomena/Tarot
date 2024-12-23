@@ -147,6 +147,39 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			*tarot_variable(thread, tarot_read16bit(ip, &ip)) = tarot_pop(thread);
 			break;
 
+		case OP_StoreInteger: {
+			union tarot_value *ptr = tarot_variable(thread, tarot_read16bit(ip, &ip));
+			z = tarot_pop(thread);
+			tarot_release_integer(z.Integer);
+			tarot_enable_regions(false);
+			tarot_free_integer(ptr->Integer);
+			tarot_enable_regions(true);
+			*ptr = z;
+			break;
+		}
+
+		case OP_StoreRational: {
+			union tarot_value *ptr = tarot_variable(thread, tarot_read16bit(ip, &ip));
+			z = tarot_pop(thread);
+			tarot_release_rational(z.Rational);
+			tarot_enable_regions(false);
+			tarot_free_rational(ptr->Rational);
+			tarot_enable_regions(true);
+			*ptr = z;
+			break;
+		}
+
+		case OP_StoreString: {
+			union tarot_value *ptr = tarot_variable(thread, tarot_read16bit(ip, &ip));
+			z = tarot_pop(thread);
+			tarot_remove_from_region(z.String);
+			tarot_enable_regions(false);
+			tarot_free_string(ptr->String);
+			tarot_enable_regions(true);
+			*ptr = z;
+			break;
+		}
+
 		case OP_LoadValue:
 			tarot_push(thread, *tarot_variable(thread, tarot_read16bit(ip, &ip)));
 			break;
@@ -160,12 +193,18 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		 */
 
 		case OP_CallFunction:
+			print_thread(thread);
 			thread->instruction_pointer = ip+2;
 			ip = &vm->bytecode->instructions[tarot_call(thread, &vm->bytecode->functions[tarot_read16bit(ip, &ip)])];
+			tarot_push_region();
+			print_thread(thread);
 			break;
 
 		case OP_Return:
+			print_thread(thread);
+			tarot_pop_region();
 			ip = tarot_return(thread);
+			print_thread(thread);
 			break;
 
 		case OP_ReturnValue:
@@ -173,7 +212,10 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 				default:
 					break;
 				case TYPE_INTEGER:
-					tarot_transfer_integer(tarot_top(thread).Integer);
+					tarot_activate_relative_region(-1);
+					z.Integer = tarot_copy_integer(tarot_pop(thread).Integer);
+					tarot_activate_relative_region(+1);
+					tarot_push(thread, z);
 					break;
 				case TYPE_RATIONAL:
 					tarot_transfer_rational(tarot_top(thread).Rational);
@@ -258,6 +300,12 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_CopyInteger:
 			z.Integer = tarot_copy_integer(tarot_pop(thread).Integer);
 			tarot_push(thread, z);
+			break;
+
+		case OP_FreeInteger:
+			tarot_enable_regions(false);
+			tarot_free_integer(tarot_variable(thread, tarot_read16bit(ip, &ip))->Integer);
+			tarot_enable_regions(true);
 			break;
 
 		case OP_CastToInteger:
@@ -621,6 +669,12 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, z);
 			break;
 
+		case OP_FreeString:
+			tarot_enable_regions(false);
+			tarot_free_string(tarot_variable(thread, tarot_read16bit(ip, &ip))->Integer);
+			tarot_enable_regions(true);
+			break;
+
 		case OP_CastToString:
 			switch (tarot_read16bit(ip, &ip)) {
 				default:
@@ -682,28 +736,23 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		 */
 
 		case OP_PrintBoolean:
-			z = tarot_pop(thread);
-			tarot_fputs(tarot_stdout, tarot_bool_string(z.Boolean));
+			tarot_fputs(tarot_stdout, tarot_bool_string(tarot_pop(thread).Boolean));
 			break;
 
 		case OP_PrintInteger:
-			z = tarot_pop(thread);
-			tarot_print_integer(tarot_stdout, z.Integer);
+			tarot_print_integer(tarot_stdout, tarot_pop(thread).Integer);
 			break;
 
 		case OP_PrintFloat:
-			z = tarot_pop(thread);
-			tarot_printf("%f", z.Float);
+			tarot_printf("%f", tarot_pop(thread).Float);
 			break;
 
 		case OP_PrintRational:
-			z = tarot_pop(thread);
-			tarot_print_rational(tarot_stdout, z.Rational);
+			tarot_print_rational(tarot_stdout, tarot_pop(thread).Rational);
 			break;
 
 		case OP_PrintString:
-			z = tarot_pop(thread);
-			tarot_print_string(tarot_stdout, z.String);
+			tarot_print_string(tarot_stdout, tarot_pop(thread).String);
 			break;
 
 		case OP_NewLine:

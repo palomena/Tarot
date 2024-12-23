@@ -102,6 +102,13 @@ void tarot_move_to_parent_region(void *ptr) {
 	tarot_enable_regions(true);
 }
 
+void tarot_remove_from_region(void *ptr) {
+	size_t index = tarot_list_lookup(*current_region(), &ptr);
+	tarot_enable_regions(false);
+	tarot_list_remove(current_region(), index);
+	tarot_enable_regions(true);
+}
+
 void tarot_activate_relative_region(int rel) {
 	region_index += rel;
 }
