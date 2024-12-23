@@ -325,8 +325,8 @@ static enum tarot_datatype literal_to_datatype(enum tarot_literal_kind kind) {
 		case VALUE_STRING:
 			return TYPE_STRING;
 	}
-	tarot_error("Invalid literal kind");
-	tarot_abort();
+	tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected enumerator: %d", kind);
+	return TYPE_VOID;
 }
 
 static struct tarot_node* create_literal(
@@ -1086,8 +1086,8 @@ static void set_visibility(
 ) {
 	switch (kind_of(node)) {
 		default:
-			assert(false); /* Unhandled node kind */
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			break;
 		case NODE_Class:
 			ClassDefinition(node)->visibility = visibility;
 			break;

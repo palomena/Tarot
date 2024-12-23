@@ -26,6 +26,7 @@ enum tarot_opcode {
 	OP_CopyValue,
 	OP_PopValue,
 	OP_LoadArgument,
+	OP_Variable,
 	/* Boolean */
 	OP_PushTrue,
 	OP_PushFalse,
@@ -100,6 +101,7 @@ enum tarot_opcode {
 	/* Complex builtin datatypes */
 	OP_PushList,
 	OP_ListIndex,
+	OP_StoreListValue,
 	OP_PushDict,
 	OP_DictIndex,
 	/* Builtin Print */

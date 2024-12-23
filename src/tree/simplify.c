@@ -12,7 +12,8 @@ static double compute_floats(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return 0.00;
 		case EXPR_ADD:
 			return a + b;
 		case EXPR_SUBTRACT:
@@ -49,7 +50,8 @@ static tarot_integer* compute_integers(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return NULL;
 		case EXPR_ADD:
 			return tarot_add_integers(a, b);
 		case EXPR_SUBTRACT:
@@ -86,7 +88,8 @@ static tarot_rational* compute_rationals(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return NULL;
 		case EXPR_ADD:
 			return tarot_add_rationals(a, b);
 		case EXPR_SUBTRACT:
@@ -98,7 +101,8 @@ static tarot_rational* compute_rationals(
 		case EXPR_POWER:
 			return tarot_exponentiate_rationals(a, b);
 		case EXPR_MODULO:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return NULL;
 	}
 }
 
@@ -139,7 +143,8 @@ static bool evaluate_relation(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return false;
 		case EXPR_GREATER:
 			return relation > 0;
 		case EXPR_LESS:
@@ -200,7 +205,8 @@ static bool compare_strings(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return false;
 		case EXPR_EQUAL:
 			return tarot_compare_strings(a, b);
 		case EXPR_NOT_EQUAL:
@@ -247,7 +253,8 @@ static bool evaluate_logical(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return false;
 		case EXPR_AND:
 			return a and b;
 		case EXPR_OR:
@@ -282,7 +289,8 @@ static struct tarot_node* cast_to_boolean(struct tarot_node *operand) {
 	Literal(result)->type = TYPE_BOOLEAN;
 	switch (Literal(operand)->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Literal(operand)->type);
+			break;
 		case TYPE_BOOLEAN:
 			value = Literal(operand)->value.Boolean;
 			break;
@@ -301,7 +309,8 @@ static struct tarot_node* cast_to_float(struct tarot_node *operand) {
 	Literal(result)->type = TYPE_FLOAT;
 	switch (Literal(operand)->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Literal(operand)->type);
+			break;
 		case TYPE_FLOAT:
 			value = Literal(operand)->value.Float;
 			break;
@@ -326,7 +335,8 @@ static struct tarot_node* cast_to_integer(struct tarot_node *operand) {
 	Literal(result)->type = TYPE_INTEGER;
 	switch (Literal(operand)->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Literal(operand)->type);
+			break;
 		case TYPE_FLOAT:
 			value = tarot_create_integer_from_float(Literal(operand)->value.Float);
 			break;
@@ -351,7 +361,8 @@ static struct tarot_node* cast_to_rational(struct tarot_node *operand) {
 	Literal(result)->type = TYPE_RATIONAL;
 	switch (Literal(operand)->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Literal(operand)->type);
+			break;
 		case TYPE_FLOAT:
 			value = tarot_create_rational_from_float(Literal(operand)->value.Float);
 			break;
@@ -376,7 +387,8 @@ static struct tarot_node* cast_to_string(struct tarot_node *operand) {
 	Literal(result)->type = TYPE_STRING;
 	switch (Literal(operand)->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Literal(operand)->type);
+			break;
 		case TYPE_BOOLEAN:
 			value = tarot_create_string(tarot_bool_string(Literal(operand)->value.Boolean));
 			break;
@@ -400,7 +412,8 @@ static struct tarot_node* cast_to_string(struct tarot_node *operand) {
 static struct tarot_node* simplify_typecast(struct tarot_node *node) {
 	switch (CastExpression(node)->kind) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", CastExpression(node)->kind);
+			return NULL;
 		case TYPE_BOOLEAN:
 			return cast_to_boolean(CastExpression(node)->operand);
 		case TYPE_FLOAT:
@@ -456,7 +469,8 @@ static struct tarot_node* create_rational(
 static struct tarot_node* simplify_abs(struct tarot_node *node) {
 	switch (Type(type_of(node))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Type(type_of(node))->type);
+			return NULL;
 		case TYPE_FLOAT:
 			return create_float(
 				position_of(node),
@@ -482,7 +496,8 @@ static struct tarot_node* simplify_abs(struct tarot_node *node) {
 static struct tarot_node* simplify_neg(struct tarot_node *node) {
 	switch (Type(type_of(node))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Type(type_of(node))->type);
+			return NULL;
 		case TYPE_FLOAT:
 			return create_float(
 				position_of(node),

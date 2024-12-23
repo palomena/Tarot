@@ -744,7 +744,8 @@ static void generate_logical_expression(
 	generate(generator, LogicalExpression(node)->right_operand);
 	switch (LogicalExpression(node)->operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_AND:
 			write_instruction(generator, OP_LogicalAnd);
 			break;
@@ -763,7 +764,8 @@ static void generate_float_relational_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_LESS:
 			write_instruction(generator, OP_FloatLessThan);
 			break;
@@ -792,7 +794,8 @@ static void generate_integer_relational_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_LESS:
 			write_instruction(generator, OP_IntegerLessThan);
 			break;
@@ -821,7 +824,8 @@ static void generate_rational_relational_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_LESS:
 			write_instruction(generator, OP_RationalLessThan);
 			break;
@@ -850,7 +854,8 @@ static void generate_string_relational_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_LESS:
 		case EXPR_LESS_EQUAL:
 		case EXPR_GREATER:
@@ -877,7 +882,8 @@ static void generate_relational_expression(
 	generate(generator, RelationalExpression(node)->right_operand);
 	switch (Type(type_of(RelationalExpression(node)->left_operand))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_FLOAT:
 			generate_float_relational_expression(generator, RelationalExpression(node)->operator);
 			break;
@@ -899,7 +905,8 @@ static void generate_float_arithmetic_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_ADD:
 			write_instruction(generator, OP_FloatAddition);
 			break;
@@ -927,7 +934,8 @@ static void generate_integer_arithmetic_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_ADD:
 			write_instruction(generator, OP_IntegerAddition);
 			break;
@@ -955,7 +963,8 @@ static void generate_rational_arithmetic_expression(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case EXPR_ADD:
 			write_instruction(generator, OP_RationalAddition);
 			break;
@@ -985,7 +994,8 @@ static void generate_arithmetic_expression(
 	generate(generator, ArithmeticExpression(node)->right_operand);
 	switch (Type(type_of(node))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_FLOAT:
 			generate_float_arithmetic_expression(generator, ArithmeticExpression(node)->operator);
 			break;
@@ -1020,7 +1030,8 @@ static void generate_neg(
 	generate(generator, NegExpression(node)->expression);
 	switch (Type(type_of(NegExpression(node)->expression))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_FLOAT:
 			write_instruction(generator, OP_FloatNeg);
 			break;
@@ -1040,7 +1051,8 @@ static void generate_abs(
 	generate(generator, AbsExpression(node)->expression);
 	switch (Type(type_of(AbsExpression(node)->expression))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_FLOAT:
 			write_instruction(generator, OP_FloatAbs);
 			break;
@@ -1076,7 +1088,8 @@ static void generate_subscript(
 	generate(generator, Subscript(node)->index);
 	switch (Type(type_of(Subscript(node)->identifier))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_LIST:
 			write_instruction(generator, OP_ListIndex);
 			break;
@@ -1101,7 +1114,8 @@ static void generate_typecast(
 	generate(generator, CastExpression(node)->operand);
 	switch (CastExpression(node)->kind) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_FLOAT:
 			write_instruction(generator, OP_CastToFloat);
 			break;
@@ -1124,7 +1138,8 @@ static void generate_literal(
 ) {
 	switch (Literal(node)->kind) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case VALUE_BOOL:
 			write_boolean(generator, Literal(node)->value.Boolean);
 			break;
@@ -1195,7 +1210,8 @@ static void generate_fstring_expression(
 	generate(generator, FStringExpression(node)->expression);
 	switch (Type(type_of(node))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_FLOAT:
 			write_instruction(generator, OP_CastToString);
 			write_argument(generator, TYPE_FLOAT);
@@ -1305,7 +1321,7 @@ static void generate_identifier(
 ) {
 	switch (kind_of(link_of(node))) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
 			break;
 		case NODE_Variable:
 		case NODE_Constant:
@@ -1317,7 +1333,7 @@ static void generate_identifier(
 			write_argument(generator, index_of(link_of(node)));
 			break;
 		case NODE_Enumerator:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Not Implemented!");
 			break;
 	}
 }
@@ -1375,6 +1391,7 @@ static void generate_assignment(
 	if (kind_of(Assignment(node)->value) == NODE_Identifier) {
 		must_copy = true;
 	}
+	/* TODO: How to handle lists with type specific store? Type(type_of(definition_of(Assignment(node)->identifier)))->type*/
 	switch (Type(type_of(Assignment(node)->value))->type) {
 		default:
 			write_instruction(generator, OP_StoreValue);
@@ -1415,7 +1432,8 @@ static void generate_print(
 	generate(generator, PrintStatement(node)->arguments);
 	switch (Type(type_of(PrintStatement(node)->arguments))->type) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 		case TYPE_BOOLEAN:
 			write_instruction(generator, OP_PrintBoolean);
 			break;

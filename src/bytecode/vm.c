@@ -189,23 +189,24 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, tarot_argument(thread, tarot_read16bit(ip, &ip)));
 			break;
 
+		case OP_Variable:
+			z.Value = tarot_variable(thread, tarot_read16bit(ip, &ip));
+			tarot_push(thread, z);
+			break;
+
 		/*
 		 * MARK: Branch OPs
 		 */
 
 		case OP_CallFunction:
-			print_thread(thread);
 			thread->instruction_pointer = ip+2;
 			ip = &vm->bytecode->instructions[tarot_call(thread, &vm->bytecode->functions[tarot_read16bit(ip, &ip)])];
 			tarot_push_region();
-			print_thread(thread);
 			break;
 
 		case OP_Return:
-			print_thread(thread);
 			tarot_pop_region();
 			ip = tarot_return(thread);
-			print_thread(thread);
 			break;
 
 		case OP_ReturnValue:

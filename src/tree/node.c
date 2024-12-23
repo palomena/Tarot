@@ -62,8 +62,8 @@ struct tarot_node {
 const char* visibility_string(enum tarot_visibility kind) {
 	switch (kind) {
 		default:
-			tarot_error("visibility_string: Unhandled kind: %d", kind);
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind);
+			return NULL;
 		case VISIBILITY_NONE:
 			return "";
 		case VISIBILITY_PRIVATE:
@@ -80,8 +80,8 @@ const char* visibility_string(enum tarot_visibility kind) {
 const char* datatype_string(enum tarot_datatype kind) {
 	switch (kind) {
 		default:
-			tarot_error("datatype_string: Unhandled kind: %d", kind);
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind);
+			return NULL;
 		case TYPE_VOID:
 			return "Void";
 		case TYPE_BOOLEAN:
@@ -110,8 +110,8 @@ const char* datatype_string(enum tarot_datatype kind) {
 const char* class_string(enum tarot_node_class kind) {
 	switch (kind) {
 		default:
-			tarot_error("class_string: Unhandled kind: %d", kind);
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind);
+			return NULL;
 		case CLASS_ERROR:
 			return "Error";
 		case CLASS_BLOCK:
@@ -239,8 +239,8 @@ const char* node_string(enum tarot_node_kind kind) {
 	if (kind >= 0 and kind < lengthof(names)) {
 		return names[kind];
 	}
-	tarot_error("Unrecoverable value error");
-	tarot_abort();
+	tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected node kind: %d!", kind);
+	return NULL;
 }
 
 enum tarot_node_kind kind_of(struct tarot_node *node) {
@@ -254,7 +254,8 @@ enum tarot_node_kind kind_of(struct tarot_node *node) {
 const char* LogicalExpressionOperatorString(enum LogicalExpressionOperator operator) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return NULL;
 		case EXPR_AND:
 			return tarot_token_string(TAROT_TOK_AND);
 		case EXPR_OR:
@@ -267,7 +268,8 @@ const char* LogicalExpressionOperatorString(enum LogicalExpressionOperator opera
 const char* RelationalExpressionOperatorString(enum RelationalExpressionOperator operator) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return NULL;
 		case EXPR_GREATER:
 			return tarot_token_string(TAROT_TOK_GREATER_THAN);
 		case EXPR_GREATER_EQUAL:
@@ -288,7 +290,8 @@ const char* RelationalExpressionOperatorString(enum RelationalExpressionOperator
 const char* ArithmeticExpressionOperatorString(enum ArithmeticExpressionOperator operator) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			return NULL;
 		case EXPR_ADD:
 			return tarot_token_string(TAROT_TOK_PLUS);
 		case EXPR_SUBTRACT:
@@ -586,7 +589,8 @@ struct tarot_node* tarot_create_node(
 uint16_t index_of(struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			return 0;
 		case NODE_Identifier:
 		case NODE_Subscript:
 			return index_of(link_of(node));
@@ -653,8 +657,8 @@ struct tarot_stream_position* position_of(struct tarot_node *node) {
 struct tarot_string* name_of(struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
-			tarot_error("name_of: Unhandled node kind: %d", kind_of(node));
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			return NULL;
 		case NODE_Identifier:
 			return Identifier(node)->name;
 		case NODE_Enumerator:
@@ -689,8 +693,8 @@ struct tarot_string* name_of(struct tarot_node *node) {
 enum tarot_visibility visibility_of(struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
-			tarot_error("visibility_of: Unhandled node kind: %d", kind_of(node));
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			return VISIBILITY_NONE;
 		case NODE_Class:
 			return ClassDefinition(node)->visibility;
 		case NODE_Enum:
@@ -739,8 +743,8 @@ struct tarot_node* definition_of(struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
 			if (class_of(node) != CLASS_DEFINITION) {
-				tarot_error("definition_of: Unhandled node kind: %d", kind_of(node));
-				tarot_abort();
+				tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+				return NULL;
 			}
 			return node;
 		case NODE_Identifier:
@@ -799,8 +803,8 @@ static struct tarot_stream_position* invalid_position(void) {
 struct tarot_node* type_of(struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
-			tarot_error("type_of: Unhandled node kind: %d", kind_of(node));
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			return NULL;
 		case NODE_NULL:
 			return builtin_type(TYPE_VOID, invalid_position());
 		case NODE_Type:
@@ -904,7 +908,8 @@ struct tarot_node* tarot_copy_node(struct tarot_node *original) {
 	switch (kind_of(original)) {
 		size_t i;
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			break;
 		case NODE_ERROR:
 			break;
 		case NODE_Module:

@@ -75,7 +75,8 @@ static void set_link(struct tarot_node *node, struct tarot_node *link) {
 			Identifier(node)->link = link;
 			break;
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase!");
+			break;
 	}
 }
 

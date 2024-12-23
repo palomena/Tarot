@@ -146,7 +146,8 @@ static bool validate_functioncall(struct tarot_node *node) {
 static void mark_as_set(struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			break;
 		case NODE_Variable:
 			Variable(node)->isset = true;
 			break;
@@ -443,7 +444,8 @@ static bool validate_string_typecast(struct tarot_node *operand) {
 static bool validate_typecast(struct tarot_node *node) {
 	switch (CastExpression(node)->kind) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", CastExpression(node)->kind);
+			return false;
 		case TYPE_BOOLEAN:
 			return validate_boolean_typecast(CastExpression(node)->operand);
 		case TYPE_FLOAT:

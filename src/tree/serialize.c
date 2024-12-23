@@ -26,7 +26,8 @@ static void serialize_logical_operator(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			break;
 		case EXPR_AND:
 			tarot_fprintf(stream, " %s ", tarot_token_string(TAROT_TOK_AND));
 			break;
@@ -45,7 +46,8 @@ static void serialize_relational_operator(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			break;
 		case EXPR_LESS:
 			tarot_fputs(stream, tarot_token_string(TAROT_TOK_LESS_THAN));
 			break;
@@ -76,7 +78,8 @@ static void serialize_arithmetic_operator(
 ) {
 	switch (operator) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", operator);
+			break;
 		case EXPR_ADD:
 			tarot_fputs(stream, tarot_token_string(TAROT_TOK_PLUS));
 			break;
@@ -230,7 +233,8 @@ static void serialize_block(
 ) {
 	switch (Block(node)->kind) {
 		default:
-			tarot_abort();
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", Block(node)->kind);
+			break;
 		case BLOCK_DEFAULT:
 			serialize_default_block(stream, node);
 			break;
@@ -253,6 +257,7 @@ void tarot_serialize_node(
 ) {
 	switch (kind_of(node)) {
 		size_t i;
+		case NODE_NULL:
 		case NODE_ERROR:
 			tarot_fputs(stream, "ERROR");
 			break;
@@ -456,6 +461,18 @@ void tarot_serialize_node(
 			tarot_fputc(stream, '(');
 			tarot_serialize_node(stream, PrintStatement(node)->arguments);
 			tarot_fputc(stream, ')');
+			break;
+		case NODE_Input:
+			tarot_fputs(stream, "input");
+			tarot_fputc(stream, '(');
+			tarot_serialize_node(stream, InputExpression(node)->prompt);
+			tarot_fputc(stream, ')');
+			break;
+		case NODE_Return:
+			tarot_fputs(stream, tarot_token_string(TAROT_TOK_RETURN));
+			tarot_fputc(stream, ' ');
+			tarot_serialize_node(stream, ReturnStatement(node)->expression);
+			tarot_fputc(stream, ';');
 			break;
 		case NODE_Try:
 			tarot_fputs(stream, tarot_token_string(TAROT_TOK_TRY));

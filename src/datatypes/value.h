@@ -18,6 +18,7 @@ union tarot_value {
 	struct tarot_dictionary *Dict;
 	struct tarot_list       *List;
 	struct tarot_string     *String;
+	union tarot_value       *Value;
 };
 
 #endif /* TAROT_TYPE_VALUE_H */

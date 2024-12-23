@@ -141,29 +141,14 @@ void tarot_warning_at(
 	}
 }
 
-void tarot_raise_assert(
-	bool ok,
-	const char *condition,
-	const char *file,
-	int line,
-	const char *format, ...
-) {
-	if (not ok) {
-		va_list ap;
-		tarot_begin_error(NULL);
-		tarot_fputs(tarot_stderr, "Assertion failed: ");
-		tarot_fputs(tarot_stderr, condition);
-		tarot_fprintf(tarot_stderr, " (%s:%d) ", file, line);
-		va_start(ap, format);
-		tarot_vfprintf(tarot_stderr, format, &ap);
-		va_end(ap);
-		tarot_end_error();
-		tarot_abort();
-	}
-}
-
-void tarot__abort(const char *file, int line) {
-	/* abort function name clashes with stdc abort name at linker level */
-	tarot_fprintf(tarot_stderr, "%s:%d\n", file, line);
+void tarot_sourcecode_error(const char *file, int line, const char *format, ...) {
+	va_list ap;
+	tarot_begin_error(NULL);
+	tarot_fputs(tarot_stderr, "Fatal Error: ");
+	tarot_fprintf(tarot_stderr, " (%s:%d) ", file, line);
+	va_start(ap, format);
+	tarot_vfprintf(tarot_stderr, format, &ap);
+	va_end(ap);
+	tarot_end_error();
 	tarot_platform.abort();
 }

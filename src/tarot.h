@@ -43,4 +43,6 @@
 
 #include "tree/tree.h"
 
+#include "tests/tests.h"
+
 #endif /* TAROT_H */

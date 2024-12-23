@@ -122,7 +122,6 @@ void free_thread(struct tarot_thread *thread) {
 }
 
 void print_thread(struct tarot_thread *thread) {
-	return;
 	size_t i;
 	tarot_printf("Printout of Thread(%p)\n", thread);
 	tarot_printf(".callstack (index: %zu)\n", thread->callstack.index);

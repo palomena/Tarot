@@ -23,14 +23,11 @@ extern void tarot_warning_at(
 	const char *format, ...
 );
 
+extern void tarot_sourcecode_error(const char *file, int line, const char *format, ...);
+
 extern void tarot_enable_warnings(bool enable);
 extern size_t tarot_num_errors(void);
 extern size_t tarot_num_warnings(void);
-
-#ifdef TAROT_SOURCE
-#define tarot_abort() tarot__abort(__FILE__, __LINE__)
-extern void tarot__abort(const char *file, int line);
-#endif
 
 extern void tarot_error(const char *format, ...);
 

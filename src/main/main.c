@@ -41,7 +41,7 @@ static const unsigned int num_options = lengthof(command_line_options);
 
 static struct {
 	struct tarot_node *ast;
-	struct tarot_bytecode_header *bytecode;
+	struct tarot_bytecode *bytecode;
 	const char *name;
 	const char *input;
 	const char *output;

@@ -69,13 +69,14 @@ TAROT_INLINE void tarot_enable_regions(bool enable) {
 }
 
 void tarot_push_region(void) {
+	void *container;
 	region_index++;
 	tarot_enable_regions(false);
 	if (regions == NULL) {
-		regions = tarot_create_list(sizeof(regions), 5, NULL);
+		regions = tarot_create_list(sizeof(regions), 10, NULL);
 	}
-	void *p = tarot_create_list(sizeof(void*), 5, NULL);
-	tarot_list_append(&regions, &p);
+	container = tarot_create_list(sizeof(void*), 10, NULL);
+	tarot_list_append(&regions, &container);
 	tarot_enable_regions(true);
 }
 
