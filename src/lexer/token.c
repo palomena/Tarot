@@ -7,7 +7,7 @@ const char* tarot_token_string(enum tarot_token_kind kind) {
 		"EOF", "Comment", "Textblock",
 		/* Keywords */
 		NULL,
-		"and", "as", "assert", "catch", "class",
+		"and", "as", "assert", "break", "catch", "class",
 		"constant", "define_type", "else", "enumeration",
 		"false", "for", "from", "foreign_function", "function", "if",
 		"import", "in", "is", "match", "mod", "namespace", "not",
@@ -40,6 +40,7 @@ const char* tarot_token_class(enum tarot_token_kind kind) {
 		case TAROT_TOK_AND:
 		case TAROT_TOK_AS:
 		case TAROT_TOK_ASSERT:
+		case TAROT_TOK_BREAK:
 		case TAROT_TOK_CATCH:
 		case TAROT_TOK_CLASS:
 		case TAROT_TOK_CONSTANT:

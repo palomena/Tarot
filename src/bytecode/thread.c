@@ -4,10 +4,10 @@
 TAROT_INLINE
 static void stack_push(struct tarot_stack *stack, union tarot_value value) {
 	if (stack->ptr >= stack->size) {
-		tarot_enable_regions(false);
+		bool state = tarot_enable_regions(false);
 		stack->size = 16 + stack->size * 2;
 		stack->base = tarot_realloc(stack->base, sizeof(value) * stack->size);
-		tarot_enable_regions(true);
+		tarot_enable_regions(state);
 	}
 	stack->base[stack->ptr++] = value;
 }
@@ -38,10 +38,10 @@ static struct stackframe* current_frame(struct tarot_callstack *callstack) {
 TAROT_INLINE
 static void push_frame(struct tarot_callstack *callstack) {
 	if (callstack->index >= callstack->size) {
-		tarot_enable_regions(false);
+		bool state = tarot_enable_regions(false);
 		callstack->size = 8 + callstack->size * 2;
 		callstack->frames = tarot_realloc(callstack->frames, sizeof(callstack->frames[0]) * callstack->size);
-		tarot_enable_regions(true);
+		tarot_enable_regions(state);
 	}
 	callstack->index++;
 }

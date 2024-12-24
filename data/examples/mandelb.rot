@@ -3,9 +3,9 @@
  */
 
 function main() {
-	constant width  = 80.0f;
-	constant height = 40.0f;
-	constant max = 10.00f;
+	constant width  = 80.0f;   # neues zeug für constant noch nicht implementiert (var ptr)
+	constant height = 40.0f;   # neues zeug für constant noch nicht implementiert (var ptr)
+	constant max = 10.00f;   # neues zeug für constant noch nicht implementiert (var ptr)
 	let row = 0.00f;
 	while row < height {
 		let col = 0.00f;

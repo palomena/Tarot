@@ -808,11 +808,12 @@ static bool validate_class(struct tarot_node *node) {
 static bool validate_list(struct tarot_node *node) {
 	/* All elements must have the same type*/
 	struct tarot_node *type = type_of(node);
+	struct tarot_node *reftype = Type(type)->subtype;
 	size_t i;
 	for (i = 0; i < List(node)->num_elements; i++) {
 		struct tarot_node *element = List(node)->elements[i];
 		struct tarot_node *subtype = type_of(element);
-		if (not compare_types(Type(type)->subtype, subtype)) {
+		if (not compare_types(reftype, subtype)) {
 			tarot_begin_error(position_of(element));
 			print_text("List element ");
 			print_node(element);

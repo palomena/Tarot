@@ -64,26 +64,28 @@ static TAROT_INLINE bool region_available(void) {
 	return regions_enabled and region_index > 0;
 }
 
-TAROT_INLINE void tarot_enable_regions(bool enable) {
+TAROT_INLINE bool tarot_enable_regions(bool enable) {
+	bool previous_state = regions_enabled;
 	regions_enabled = enable;
+	return previous_state;
 }
 
 void tarot_push_region(void) {
 	void *container;
 	region_index++;
-	tarot_enable_regions(false);
+	bool state = tarot_enable_regions(false);
 	if (regions == NULL) {
 		regions = tarot_create_list(sizeof(regions), 10, NULL);
 	}
 	container = tarot_create_list(sizeof(void*), 10, NULL);
 	tarot_list_append(&regions, &container);
-	tarot_enable_regions(true);
+	tarot_enable_regions(state);
 }
 
 void tarot_pop_region(void) {
 	size_t i;
 	assert(region_index > 0);
-	tarot_enable_regions(false);
+	bool state = tarot_enable_regions(false);
 	for (i = 0; i < tarot_list_length(*current_region()); i++) {
 		void **ptr = tarot_list_element(*current_region(), i);
 		tarot_free(*ptr);
@@ -91,23 +93,23 @@ void tarot_pop_region(void) {
 	tarot_clear_list(*current_region());
 	tarot_free_list(*current_region());
 	tarot_list_pop(&regions, NULL);
-	tarot_enable_regions(true);
+	tarot_enable_regions(state);
 	region_index--;
 }
 
 void tarot_move_to_parent_region(void *ptr) {
 	size_t index = tarot_list_lookup(*current_region(), &ptr);
-	tarot_enable_regions(false);
+	bool state = tarot_enable_regions(false);
 	tarot_list_remove(current_region(), index);
 	tarot_list_append(parent_region(), &ptr);
-	tarot_enable_regions(true);
+	tarot_enable_regions(state);
 }
 
 void tarot_remove_from_region(void *ptr) {
 	size_t index = tarot_list_lookup(*current_region(), &ptr);
-	tarot_enable_regions(false);
+	bool state = tarot_enable_regions(false);
 	tarot_list_remove(current_region(), index);
-	tarot_enable_regions(true);
+	tarot_enable_regions(state);
 }
 
 void tarot_activate_relative_region(int rel) {
@@ -147,9 +149,9 @@ void tarot_clear_regions(void) {
 	while (region_index > 0) {
 		tarot_pop_region();
 	}
-	tarot_enable_regions(false);
+	bool state = tarot_enable_regions(false);
 	tarot_free_list(regions);
-	tarot_enable_regions(true);
+	tarot_enable_regions(state);
 }
 
 /* Allocators */
@@ -170,9 +172,9 @@ void* tarot_malloc(size_t size) {
 		}
 		/* Disable regions because list_append might allocate */
 		if (region_available()) {
-			tarot_enable_regions(false);
+			bool state = tarot_enable_regions(false);
 			tarot_list_append(current_region(), &ptr);
-			tarot_enable_regions(true);
+			tarot_enable_regions(state);
 		}
 	}
 	return ptr;

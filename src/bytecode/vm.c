@@ -107,8 +107,9 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		opcode = *ip++;
 
 		switch (opcode) {
-			union tarot_value a, b, z;
+			union tarot_value a, b, z, *var;
 			size_t i, length;
+			bool state;
 
 		halt:
 		case OP_Halt:
@@ -145,41 +146,41 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_StoreValue:
-			*tarot_variable(thread, tarot_read16bit(ip, &ip)) = tarot_pop(thread);
+			*var = tarot_pop(thread);
 			break;
 
-		case OP_StoreInteger: {
-			union tarot_value *ptr = tarot_variable(thread, tarot_read16bit(ip, &ip));
+		/* TODO: */
+		/* SIngle store suffices if we make FreeInteger take a local var and dereference everything before a free. Then have FreeType() Store() */
+		/* We'd need to overhaul the regions though, either with metadata for regional objects or type-specific instance accounting */
+		/* Also what about non-allocated objects? -> how would release work on them -> it wouldn't. So not possible! (a float could have same value as a pointer) */
+		/* Could introduce a "transfer ownership" opcode that releases topstack from region */
+
+		case OP_StoreInteger:
 			z = tarot_pop(thread);
 			tarot_release_integer(z.Integer);
-			tarot_enable_regions(false);
-			tarot_free_integer(ptr->Integer);
-			tarot_enable_regions(true);
-			*ptr = z;
+			state = tarot_enable_regions(false);
+			tarot_free_integer(var->Integer);
+			tarot_enable_regions(state);
+			*var = z;
 			break;
-		}
 
-		case OP_StoreRational: {
-			union tarot_value *ptr = tarot_variable(thread, tarot_read16bit(ip, &ip));
+		case OP_StoreRational:
 			z = tarot_pop(thread);
 			tarot_release_rational(z.Rational);
-			tarot_enable_regions(false);
-			tarot_free_rational(ptr->Rational);
-			tarot_enable_regions(true);
-			*ptr = z;
+			state = tarot_enable_regions(false);
+			tarot_free_rational(var->Rational);
+			tarot_enable_regions(state);
+			*var = z;
 			break;
-		}
 
-		case OP_StoreString: {
-			union tarot_value *ptr = tarot_variable(thread, tarot_read16bit(ip, &ip));
+		case OP_StoreString:
 			z = tarot_pop(thread);
 			tarot_remove_from_region(z.String);
-			tarot_enable_regions(false);
-			tarot_free_string(ptr->String);
-			tarot_enable_regions(true);
-			*ptr = z;
+			state = tarot_enable_regions(false);
+			tarot_free_string(var->String);
+			tarot_enable_regions(state);
+			*var = z;
 			break;
-		}
 
 		case OP_LoadValue:
 			tarot_push(thread, *tarot_variable(thread, tarot_read16bit(ip, &ip)));
@@ -189,9 +190,23 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, tarot_argument(thread, tarot_read16bit(ip, &ip)));
 			break;
 
-		case OP_Variable:
-			z.Value = tarot_variable(thread, tarot_read16bit(ip, &ip));
-			tarot_push(thread, z);
+		case OP_LoadVariablePointer:
+			var = tarot_variable(thread, tarot_read16bit(ip, &ip));
+			break;
+
+		case OP_LoadListIndex:
+			a = tarot_pop(thread);
+			z = tarot_pop(thread);
+			i = tarot_integer_to_short(a.Integer);
+			var = (union tarot_value*)tarot_list_element(z.List, i);
+			break;
+
+		case OP_Track:
+			tarot_enable_regions(true);
+			break;
+
+		case OP_UnTrack:
+			tarot_enable_regions(false);
 			break;
 
 		/*
@@ -305,9 +320,9 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_FreeInteger:
-			tarot_enable_regions(false);
-			tarot_free_integer(tarot_variable(thread, tarot_read16bit(ip, &ip))->Integer);
-			tarot_enable_regions(true);
+			state = tarot_enable_regions(false);
+			tarot_free_integer(var->Integer);
+			tarot_enable_regions(state);
 			break;
 
 		case OP_CastToInteger:
@@ -672,9 +687,9 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_FreeString:
-			tarot_enable_regions(false);
-			tarot_free_string(tarot_variable(thread, tarot_read16bit(ip, &ip))->Integer);
-			tarot_enable_regions(true);
+			state = tarot_enable_regions(false);
+			tarot_free_string(var->String);
+			tarot_enable_regions(state);
 			break;
 
 		case OP_CastToString:
@@ -730,8 +745,16 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_PushList:
 			length = tarot_read16bit(ip, &ip);
 			z.List = tarot_create_list(sizeof(z), length, NULL);
+			tarot_print_region(tarot_num_active_regions()-1);
 			for (i = 0; i < length; i++) {
 				a = tarot_pop(thread);
+				/*tarot_release_integer(a.Integer);   /* FIXME: only for integers atm | maybe give it an additional type argument in ip | could also consider splitting regions into datatype fields and encoding type by the location of the value | or have special malloc header for objects allocated in a region (e.g. region ptr or chunk chains (next ptr to free))*/
+				/* easy would be: OP_PushList [SubType] */
+				/* but what if one of these elements is a variable instance? That would not need to be released! --> we shouldnt release here! better to be explicit! */
+				/* first make an overview where releases are necessary at all! */
+				/* > only for storeinteger */
+				/* maybe make pushlist only a list and generate a loop with index access for everything else? */
+				/* OP_TRACK , OP_UNTRACK? */
 				tarot_list_append(&z.List, &a);
 			}
 			tarot_push(thread, z);
@@ -744,6 +767,20 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = *(union tarot_value*)tarot_list_element(z.List, i);
 			tarot_push(thread, b);
 			break;
+
+		case OP_FreeList: {
+			enum tarot_datatype type = tarot_read16bit(ip, &ip);
+			bool state = tarot_enable_regions(false);
+			for (i = 0; i < tarot_list_length(var->List); i++) {
+				a = *(union tarot_value*)tarot_list_element(var->List, i);
+				if (type == TYPE_INTEGER) tarot_free_integer(a.Integer);
+				else if (type == TYPE_STRING) tarot_free_string(a.String);
+				else if (type == TYPE_RATIONAL) tarot_free_rational(a.Rational);
+			}
+			/*tarot_free_list(z.List);*/  /* currently still resides within region, would need a StoreList opcode */
+			tarot_enable_regions(state);
+			break;
+		}
 
 		case OP_PushDict:
 		case OP_DictIndex:

@@ -275,19 +275,13 @@ static void disassemble(
 		case OP_Debug:
 			print_name(stream, read_string(bytecode, read_argument(&ip)));
 			break;
-		case OP_StoreValue:
-		case OP_StoreInteger:
-		case OP_StoreRational:
-		case OP_StoreString:
+		case OP_LoadVariablePointer:
 		case OP_LoadValue:
 		case OP_LoadArgument:
 		case OP_Goto:
 		case OP_GotoIfFalse:
 		case OP_PushList:
 		case OP_PushDict:
-		case OP_FreeInteger:
-		case OP_FreeRational:
-		case OP_FreeString:
 			print_argument(stream, read_argument(&ip));
 			break;
 		case OP_CastToFloat:
@@ -295,6 +289,7 @@ static void disassemble(
 		case OP_CastToRational:
 		case OP_CastToString:
 		case OP_ReturnValue:
+		case OP_FreeList:
 			print_type(stream, read_argument(&ip));
 			break;
 		case OP_CallForeignFunction:
@@ -515,6 +510,19 @@ static void write_instruction(
 		generator->instructions[generator->offset.instructions] = opcode;
 	}
 	generator->offset.instructions++;
+}
+
+/**
+ * Writes an argument for a previous instruction to the instruction segment.
+ */
+static void write_argument_short(
+	struct tarot_generator *generator,
+	uint8_t value
+) {
+	if (not read_only(generator)) {
+		tarot_write8bit(&generator->instructions[generator->offset.instructions], value);
+	}
+	generator->offset.instructions += sizeof(value);
 }
 
 /**
@@ -1164,9 +1172,12 @@ static void generate_list(
 	struct tarot_node *node
 ) {
 	size_t i;
+	write_instruction(generator, OP_UnTrack);
 	for (i = List(node)->num_elements; i > 0; i--) {
 		generate(generator, List(node)->elements[i-1]);
+		/* FIXME: If variable, we need a copy! */
 	}
+	write_instruction(generator, OP_Track);
 	write_instruction(generator, OP_PushList);
 	write_argument(generator, List(node)->num_elements);
 }
@@ -1284,16 +1295,25 @@ static void generate_function(
 				default:
 					break;
 				case TYPE_INTEGER:
-					write_instruction(generator, OP_FreeInteger);
+					write_instruction(generator, OP_LoadVariablePointer);
 					write_argument(generator, index_of(symbol));
+					write_instruction(generator, OP_FreeInteger);
 					break;
 				case TYPE_RATIONAL:
-					write_instruction(generator, OP_FreeRational);
+					write_instruction(generator, OP_LoadVariablePointer);
 					write_argument(generator, index_of(symbol));
+					write_instruction(generator, OP_FreeRational);
 					break;
 				case TYPE_STRING:
-					write_instruction(generator, OP_FreeString);
+					write_instruction(generator, OP_LoadVariablePointer);
 					write_argument(generator, index_of(symbol));
+					write_instruction(generator, OP_FreeString);
+					break;
+				case TYPE_LIST:
+					write_instruction(generator, OP_LoadVariablePointer);
+					write_argument(generator, index_of(symbol));
+					write_instruction(generator, OP_FreeList);
+					write_argument(generator, Type(Type(type_of(symbol))->subtype)->type);
 					break;
 			}
 		}
@@ -1386,12 +1406,37 @@ static void generate_assignment(
 	struct tarot_generator *generator,
 	struct tarot_node *node
 ) {
+	struct tarot_node *definition = definition_of(Assignment(node)->identifier);
 	bool must_copy = false;
 	generate(generator, Assignment(node)->value);
 	if (kind_of(Assignment(node)->value) == NODE_Identifier) {
 		must_copy = true;
 	}
-	/* TODO: How to handle lists with type specific store? Type(type_of(definition_of(Assignment(node)->identifier)))->type*/
+
+
+
+	if (kind_of(Assignment(node)->identifier) == NODE_Subscript) {
+		struct tarot_node *subscript = Assignment(node)->identifier;
+		switch (Type(type_of(definition))->type) {
+			default:
+				write_instruction(generator, OP_LoadVariablePointer);
+				write_argument(generator, index_of(node));
+				break;
+			case TYPE_LIST: /* FIXME: Not quite right when assigning list to list (not index element) */
+				generate(generator, Subscript(subscript)->identifier);
+				generate(generator, Subscript(subscript)->index);
+				write_instruction(generator, OP_LoadListIndex);
+				/* list index could be variable!! */
+				break;
+		}
+	} else {
+		write_instruction(generator, OP_LoadVariablePointer);
+		write_argument(generator, index_of(Assignment(node)->identifier));
+	}
+
+
+
+
 	switch (Type(type_of(Assignment(node)->value))->type) {
 		default:
 			write_instruction(generator, OP_StoreValue);
@@ -1415,7 +1460,7 @@ static void generate_assignment(
 			write_instruction(generator, OP_StoreString);
 			break;
 	}
-	write_argument(generator, index_of(Assignment(node)->identifier));
+	/*write_argument(generator, index_of(Assignment(node)->identifier));*/
 }
 
 static void generate_expression_statement(
@@ -1472,6 +1517,10 @@ static void generate_variable(
 	if (kind_of(Variable(node)->value) == NODE_Identifier) {
 		must_copy = true;
 	}
+
+	write_instruction(generator, OP_LoadVariablePointer);
+	write_argument(generator, index_of(node));
+
 	switch (Type(type_of(Variable(node)->value))->type) {
 		default:
 			write_instruction(generator, OP_StoreValue);
@@ -1489,7 +1538,6 @@ static void generate_variable(
 			write_instruction(generator, OP_StoreString);
 			break;
 	}
-	write_argument(generator, index_of(node));
 }
 
 static void generate_constant(
@@ -1497,8 +1545,9 @@ static void generate_constant(
 	struct tarot_node *node
 ) {
 	generate(generator, Constant(node)->value);
-	write_instruction(generator, OP_StoreValue);
+	write_instruction(generator, OP_LoadVariablePointer);
 	write_argument(generator, index_of(node));
+	write_instruction(generator, OP_StoreValue);
 }
 
 static void generate(struct tarot_generator *generator, struct tarot_node *node) {

@@ -19,6 +19,7 @@ enum tarot_opcode {
 	OP_CallFunction,
 	OP_Return,
 	OP_ReturnValue,
+	/* MARK: Memory */
 	OP_PushRegion,
 	OP_PopRegion,
 	OP_LoadValue,
@@ -26,8 +27,11 @@ enum tarot_opcode {
 	OP_CopyValue,
 	OP_PopValue,
 	OP_LoadArgument,
-	OP_Variable,
-	/* Boolean */
+	OP_LoadVariablePointer,
+	OP_LoadListIndex,
+	OP_Track,
+	OP_UnTrack,
+	/* MARK: Logical */
 	OP_PushTrue,
 	OP_PushFalse,
 	OP_LogicalAnd,
@@ -35,7 +39,7 @@ enum tarot_opcode {
 	OP_LogicalXor,
 	OP_LogicalEquality,
 	OP_LogicalNot,
-	/* Integer */
+	/* MARK: Integer */
 	OP_PushInteger,
 	OP_CopyInteger,
 	OP_FreeInteger,
@@ -54,7 +58,7 @@ enum tarot_opcode {
 	OP_IntegerGreaterThan,
 	OP_IntegerGreaterEqual,
 	OP_IntegerEquality,
-	/* Float */
+	/* MARK: Float */
 	OP_PushFloat,
 	OP_CastToFloat,
 	OP_FloatAbs,
@@ -70,7 +74,7 @@ enum tarot_opcode {
 	OP_FloatGreaterThan,
 	OP_FloatGreaterEqual,
 	OP_FloatEquality,
-	/* Rational */
+	/* MARK: Rational */
 	OP_PushRational,
 	OP_CopyRational,
 	OP_StoreRational,
@@ -89,7 +93,7 @@ enum tarot_opcode {
 	OP_RationalGreaterThan,
 	OP_RationalGreaterEqual,
 	OP_RationalEquality,
-	/* String */
+	/* MARK: String */
 	OP_PushString,
 	OP_CopyString,
 	OP_StoreString,
@@ -98,13 +102,13 @@ enum tarot_opcode {
 	OP_StringEquality,
 	OP_StringContains,
 	OP_StringConcat,
-	/* Complex builtin datatypes */
+	/* MARK: List */
 	OP_PushList,
 	OP_ListIndex,
-	OP_StoreListValue,
+	OP_FreeList,
 	OP_PushDict,
 	OP_DictIndex,
-	/* Builtin Print */
+	/* MARK: I/O */
 	OP_PrintBoolean,
 	OP_PrintInteger,
 	OP_PrintFloat,

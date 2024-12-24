@@ -8,7 +8,7 @@ extern void tarot_initialize_memory_functions(void);
 extern void tarot_clear_regions(void); /* TODO: rename to deinitialize_mem...? */
 #endif
 
-extern void tarot_enable_regions(bool enable);
+extern bool tarot_enable_regions(bool enable);
 extern void tarot_push_region(void);
 extern void tarot_pop_region(void);
 extern void tarot_move_to_parent_region(void *ptr);

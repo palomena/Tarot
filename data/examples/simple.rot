@@ -1,4 +1,6 @@
 function main() {
-	let elements = [1,2,3];
-	elements[0] = 10;
+	# Why does excess of 7 list elements lead to abort?
+	let elements = ["This", "is", "working!", "AAAAAA"];
+	println(elements[1]);
 }
+# short/medium/long arguments and getter/setter in bytecode.c and vm.c for 8bit,16bit,24bit args (8bit for variable index)
