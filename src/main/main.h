@@ -5,5 +5,6 @@
 #include "main/getopt.h"
 
 extern void tarot_main(int argc, char *argv[]);
+extern void tarot_vmain(const char *path);
 
 #endif /* TAROT_MAIN_H */

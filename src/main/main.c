@@ -256,6 +256,10 @@ static void run_program(void) {
 		}
 	}
 
+	if (program_state.output) {
+		tarot_export_bytecode(program_state.output, program_state.bytecode);
+	}
+
 	tarot_free_node(program_state.ast);
 	tarot_free_bytecode(program_state.bytecode);
 

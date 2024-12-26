@@ -36,17 +36,17 @@ function main() {
 ## Build
 Simply run make in the root directory:
 ```bash
-make
+make -j 4
 ```
 
 To build in debug mode run (slow+large, but contains valuable debug info)
 ```bash
-make debug
+make debug -j 4
 ```
 
 To build an optimized release version run (fast+small)
 ```bash
-make release
+make release -j 4
 ```
 
 To clean existing builds run
@@ -60,6 +60,21 @@ You can customize a build with a few configurable build options:
 	* `default`: Uses builtin mini-gmp implementation (default)
 	* `gmp`: Requires the libgmp dependency, more optimized, but larger size
 * CC: Name of the C compiler to be used
+
+## Specifications
+
+### ROM requirements
+
+* Platform: Linux debian 6.1.0-28-amd64
+	* ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV),
+	* dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2
+	* filesize: 84KB
+
+* Platform: Linux debian 6.1.0-28-amd64
+	* ELF 32-bit LSB pie executable, Intel 80386, version 1 (SYSV)
+	* dynamically linked, interpreter /lib/ld-linux.so.2
+	* dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2
+	* filesize: 78KB
 
 ## Alternatives
 There are some well-established programming languages that

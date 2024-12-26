@@ -50,6 +50,7 @@ struct tarot_node {
 		struct Variable Variable;
 		struct Constant Constant;
 		struct Parameter Parameter;
+		struct Builtin Builtin;
 	} as;
 	struct tarot_stream_position position;
 	enum tarot_node_kind kind;
@@ -180,6 +181,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_Variable:
 		case NODE_Constant:
 		case NODE_Parameter:
+		case NODE_Builtin:
 			return CLASS_DEFINITION;
 	}
 }
@@ -234,7 +236,8 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Union",
 		"Variable",
 		"Constant",
-		"Parameter"
+		"Parameter",
+		"Builtin"
 	};
 	if (kind >= 0 and kind < lengthof(names)) {
 		return names[kind];
@@ -545,6 +548,11 @@ struct Constant* Constant(struct tarot_node *node) {
 struct Parameter* Parameter(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Parameter);
 	return &node->as.Parameter;
+}
+
+struct Builtin* Builtin(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Builtin);
+	return &node->as.Builtin;
 }
 
 /******************************************************************************
@@ -868,6 +876,8 @@ struct tarot_node* type_of(struct tarot_node *node) {
 			return builtin_type(CastExpression(node)->kind, position_of(node));
 		case NODE_Subscript:
 			return Type(type_of(Subscript(node)->identifier))->subtype;
+		case NODE_Builtin:
+			return Builtin(node)->return_type;
 	}
 }
 
@@ -1283,6 +1293,9 @@ static void traverse_node(
 			break;
 		case NODE_Relation:
 			traverse_node(&Relation(node)->parent, state);
+			if (kind_of(Relation(node)->link) == NODE_Builtin) {
+				traverse_node(&Relation(node)->link, state);
+			}
 			break;
 		case NODE_Subscript:
 			traverse_node(&Subscript(node)->identifier, state);
@@ -1400,6 +1413,9 @@ static void traverse_node(
 		case NODE_Parameter:
 			traverse_node(&Parameter(node)->type, state);
 			traverse_node(&Parameter(node)->value, state);
+			break;
+		case NODE_Builtin:
+			traverse_node(&Builtin(node)->return_type, state);
 			break;
 	}
 

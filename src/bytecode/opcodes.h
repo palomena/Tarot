@@ -102,10 +102,12 @@ enum tarot_opcode {
 	OP_StringEquality,
 	OP_StringContains,
 	OP_StringConcat,
+	OP_StringLength,
 	/* MARK: List */
 	OP_PushList,
 	OP_ListIndex,
 	OP_FreeList,
+	OP_ListLength,
 	OP_PushDict,
 	OP_DictIndex,
 	/* MARK: I/O */

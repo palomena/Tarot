@@ -46,6 +46,9 @@ extern void tarot_write16bit(uint8_t buffer[2], uint16_t value);
 extern void tarot_write24bit(uint8_t buffer[3], uint32_t value);
 extern void tarot_write32bit(uint8_t buffer[4], uint32_t value);
 extern void tarot_write_float(uint8_t buffer[8], double value);
+extern uint8_t  tarot_cast8bit(uint32_t value);
+extern uint16_t tarot_cast16bit(uint32_t value);
+extern uint32_t tarot_cast24bit(uint32_t value);
 
 /* Alignment and mapping */
 extern size_t tarot_align(size_t n);

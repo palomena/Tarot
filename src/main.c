@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "tarot.h"
 
+#define TAROT_VMAIN
+
 int main(int argc, char *argv[]) {
 	int exit_code = EXIT_FAILURE;
 	const struct tarot_platform_config config = {
@@ -17,7 +19,11 @@ int main(int argc, char *argv[]) {
 	};
 	tarot_initialize(&config);
 	if (tarot_is_initialized()) {
+#ifdef TAROT_VMAIN
+		tarot_vmain(argv[1]);
+#else
 		tarot_main(argc, argv);
+#endif
 		exit_code = tarot_exit();
 	}
 	return exit_code;

@@ -5,6 +5,8 @@ CC := gcc
 SOURCE_DIRECTORY := src
 BUILD_DIRECTORY  := build
 EXECUTABLE := ${BUILD_DIRECTORY}/pentagram
+
+# Add -m32 for 32bit build
 CFLAGS :=                 \
 	-std=c90              \
 	-pedantic             \

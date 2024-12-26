@@ -395,7 +395,7 @@ struct buffer {
 static void append_byte(struct buffer *buffer, uint8_t byte) {
 	if (buffer->index >= buffer->size) {
 		buffer->size += 10 + 2 * buffer->size;
-		tarot_realloc(buffer->data, buffer->size);
+		buffer->data = tarot_realloc(buffer->data, buffer->size);
 	}
 	buffer->data[buffer->index++] = byte;
 }

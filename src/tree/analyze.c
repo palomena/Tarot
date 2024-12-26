@@ -21,10 +21,58 @@ static struct tarot_node* block_of(struct tarot_node *node) {
 	}
 }
 
+static void resolve_builtin_list_relation(struct tarot_node *node) {
+	struct tarot_node *owner = Relation(node)->parent;
+	struct tarot_string *child = Relation(node)->child;
+	if (tarot_match_string(child, "length")) {
+		struct tarot_node *link = tarot_create_node(NODE_Builtin, position_of(node));
+		Builtin(link)->return_type = tarot_create_node(NODE_Type, position_of(node));
+		Type(Builtin(link)->return_type)->type = TYPE_INTEGER;
+		Builtin(link)->builtin_type = TYPE_LIST;
+		Relation(node)->link = link;
+	}
+}
+
+static void resolve_builtin_string_relation(struct tarot_node *node) {
+	struct tarot_node *owner = Relation(node)->parent;
+	struct tarot_string *child = Relation(node)->child;
+	if (tarot_match_string(child, "length")) {
+		struct tarot_node *link = tarot_create_node(NODE_Builtin, position_of(node)); /* FIXME: Not free'd cuz link is not traversed. Solution: new node kind BuiltinRelation */
+		Builtin(link)->return_type = tarot_create_node(NODE_Type, position_of(node));
+		Builtin(link)->builtin_type = TYPE_STRING;
+		Type(Builtin(link)->return_type)->type = TYPE_INTEGER;
+		Relation(node)->link = link;
+	}
+}
+
+static void resolve_builtin_relation(struct tarot_node *node) {
+	struct tarot_node *owner = Relation(node)->parent;
+	struct tarot_string *child = Relation(node)->child;
+	switch (Type(type_of(owner))->type) {
+		default:
+			break;
+		case TYPE_LIST:
+			resolve_builtin_list_relation(node);
+			break;
+		case TYPE_STRING:
+			resolve_builtin_string_relation(node);
+			break;
+		case TYPE_DICT:
+			break;
+	}
+}
+
 static void resolve_relation(struct tarot_node *node) {
 	struct tarot_node *owner = definition_of(type_of(Relation(node)->parent));
 	struct tarot_node *block = block_of(owner);
 	size_t i;
+	/************** */
+	/* if builtin type such as list or dict */
+	if (owner == NULL) {
+		resolve_builtin_relation(node);
+		return;
+	}
+	/************* */
 	if (block == NULL) { /* if its NODE_ERROR that is */
 		return;
 	}

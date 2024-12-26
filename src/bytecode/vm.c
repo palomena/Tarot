@@ -191,7 +191,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_LoadVariablePointer:
-			var = tarot_variable(thread, tarot_read16bit(ip, &ip));
+			var = tarot_variable(thread, tarot_read8bit(ip, &ip));
 			break;
 
 		case OP_LoadListIndex:
@@ -738,6 +738,12 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, z);
 			break;
 
+		case OP_StringLength:
+			z = tarot_pop(thread);
+			z.Integer = tarot_create_integer_from_short(tarot_string_length(z.String));
+			tarot_push(thread, z);
+			break;
+
 		/*
 		 * MARK: List & Dict
 		 */
@@ -745,16 +751,8 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_PushList:
 			length = tarot_read16bit(ip, &ip);
 			z.List = tarot_create_list(sizeof(z), length, NULL);
-			tarot_print_region(tarot_num_active_regions()-1);
 			for (i = 0; i < length; i++) {
 				a = tarot_pop(thread);
-				/*tarot_release_integer(a.Integer);   /* FIXME: only for integers atm | maybe give it an additional type argument in ip | could also consider splitting regions into datatype fields and encoding type by the location of the value | or have special malloc header for objects allocated in a region (e.g. region ptr or chunk chains (next ptr to free))*/
-				/* easy would be: OP_PushList [SubType] */
-				/* but what if one of these elements is a variable instance? That would not need to be released! --> we shouldnt release here! better to be explicit! */
-				/* first make an overview where releases are necessary at all! */
-				/* > only for storeinteger */
-				/* maybe make pushlist only a list and generate a loop with index access for everything else? */
-				/* OP_TRACK , OP_UNTRACK? */
 				tarot_list_append(&z.List, &a);
 			}
 			tarot_push(thread, z);
@@ -781,6 +779,12 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_enable_regions(state);
 			break;
 		}
+
+		case OP_ListLength:
+			z = tarot_pop(thread);
+			a.Integer = tarot_create_integer_from_short(tarot_list_length(z.List));
+			tarot_push(thread, a);
+			break;
 
 		case OP_PushDict:
 		case OP_DictIndex:

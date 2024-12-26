@@ -1,6 +1,15 @@
 function main() {
-	# Why does excess of 7 list elements lead to abort?
-	let elements = ["This", "is", "working!", "AAAAAA"];
-	println(elements[1]);
+	let elements = [1,2,3,404,5,6,7,8,9];
+	let text = f"Hello! {elements[3]}";
+	let i = 0;
+	println(text.length);
+	while i < elements.length {
+		let sex = f"{elements[i]}";
+		println(f"Index {i}: {sex.length}");
+		println(elements[i]);
+		i += 1;
+	}
 }
 # short/medium/long arguments and getter/setter in bytecode.c and vm.c for 8bit,16bit,24bit args (8bit for variable index)
+# builtin methods such as list.length(), list.append(), etc
+# we also want this for literals, so in parse, we must ask whether a literal (string, list, dict) is followed by a dot. but careful with rationals + floats!

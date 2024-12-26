@@ -130,7 +130,8 @@ enum tarot_node_kind {
 	NODE_Union,
 	NODE_Variable,
 	NODE_Constant,
-	NODE_Parameter
+	NODE_Parameter,
+	NODE_Builtin
 };
 
 /**
@@ -989,6 +990,24 @@ struct Parameter {
  *
  */
 extern struct Parameter* Parameter(struct tarot_node *node);
+
+/******************************************************************************
+ * MARK: Builtin
+ *****************************************************************************/
+
+/**
+ *
+ */
+struct Builtin {
+	struct tarot_string *name;
+	struct tarot_node *builtin_type;
+	struct tarot_node *return_type;
+};
+
+/**
+ *
+ */
+extern struct Builtin* Builtin(struct tarot_node *node);
 
 /******************************************************************************
  * MARK: Node

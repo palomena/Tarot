@@ -178,3 +178,18 @@ size_t tarot_align(size_t n) {
 	}
 	return n;
 }
+
+uint8_t tarot_cast8bit(uint32_t value) {
+	assert (value < UINT8_MAX);
+	return value;
+}
+
+uint16_t tarot_cast16bit(uint32_t value) {
+	assert (value < UINT16_MAX);
+	return value;
+}
+
+uint32_t tarot_cast24bit(uint32_t value) {
+	assert (value < UINT32_MAX/UINT8_MAX);
+	return value;
+}
