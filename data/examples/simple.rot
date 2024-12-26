@@ -1,10 +1,7 @@
+function foo() {
+	print("Moo!");
+}
+
 function main() {
-	let text = f"Hello!";
-	let length = text.length;
-	let i = 0;
-	while i < 3 {
-		text = f"{text}{text}";
-		i += 1;
-	}
-	println(text);
+	println(foo());
 }

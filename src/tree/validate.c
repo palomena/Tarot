@@ -701,6 +701,10 @@ static bool validate_return(struct tarot_node *node) {
  *****************************************************************************/
 
 static bool validate_print(struct tarot_node *node) {
+	if (Type(type_of(PrintStatement(node)->arguments))->type == TYPE_VOID) {
+		tarot_error_at(position_of(node), "Cannot print void type!");
+		return false;
+	}
 	if (Type(type_of(PrintStatement(node)->arguments))->type == TYPE_CUSTOM) {
 		if (kind_of(definition_of(PrintStatement(node)->arguments)) != NODE_Enum) {
 			tarot_error_at(position_of(node), "Cannot print non-builtin type!");
