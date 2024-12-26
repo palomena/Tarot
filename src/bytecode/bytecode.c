@@ -1303,7 +1303,6 @@ static void generate_return(
 	generate(generator, ReturnStatement(node)->expression);
 	write_instruction(generator, OP_ReturnValue);
 	write_argument(generator, Type(type_of(ReturnStatement(node)->expression))->type);
-	write_instruction(generator, OP_Return);
 }
 
 static void generate_assert(

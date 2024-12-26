@@ -235,14 +235,20 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					tarot_push(thread, z);
 					break;
 				case TYPE_RATIONAL:
-					tarot_transfer_rational(tarot_top(thread).Rational);
+					tarot_activate_relative_region(-1);
+					z.Integer = tarot_copy_rational(tarot_pop(thread).Rational);
+					tarot_activate_relative_region(+1);
+					tarot_push(thread, z);
 					break;
-			}/*
-			b = tarot_pop(thread);
-			tarot_activate_relative_region(-1);
-			a.Integer = tarot_copy_integer(b.Integer);
-			tarot_activate_relative_region(+1);
-			tarot_push(thread, a);*/
+				case TYPE_STRING:
+					tarot_activate_relative_region(-1);
+					z.Integer = tarot_copy_string(tarot_pop(thread).String);
+					tarot_activate_relative_region(+1);
+					tarot_push(thread, z);
+					break;
+			}
+			tarot_pop_region();
+			ip = tarot_return(thread);
 			break;
 
 		case OP_Goto:

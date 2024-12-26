@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "tarot.h"
 
-#define TAROT_VMAIN
+#undef TAROT_VMAIN
 
 int main(int argc, char *argv[]) {
 	int exit_code = EXIT_FAILURE;
