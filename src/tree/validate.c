@@ -299,7 +299,20 @@ static bool validate_function(struct tarot_node *node) {
 		return false;
 	}
 	if (FunctionDefinition(node)->return_value) {
-		/* TODO: Check if all branches contain return statement. */
+		size_t i;
+		struct tarot_node **elements = Block(FunctionDefinition(node)->block)->elements;
+		struct tarot_node *it = elements;
+		size_t length = Block(FunctionDefinition(node)->block)->num_elements;
+		unsigned int num_returns = 0;
+		for (i = 0; i < length; i++) {
+			if (kind_of(elements[i]) == NODE_Return) {
+				num_returns++;
+			}
+		}
+		if (num_returns == 0) {
+			tarot_error_at(position_of(node), "Function does not contain a return statement!");
+			return false;
+		}
 	}
 	if (Block(FunctionDefinition(node)->parameters)->num_elements >= 16) {
 		tarot_error_at(position_of(node), "Too many parameters");

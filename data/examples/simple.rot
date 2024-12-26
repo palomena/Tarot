@@ -1,7 +1,15 @@
 function foo() {
-	print("Moo!");
+	let i = 0;
+	while true {
+		i += 1;
+		if (i > 10) {
+			break;
+		} else {
+			println(i);
+		}
+	}
 }
 
 function main() {
-	println(foo());
+	foo();
 }

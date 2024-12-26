@@ -1617,6 +1617,16 @@ static void generate_constant(
 	write_instruction(generator, OP_StoreValue);
 }
 
+static void generate_break(
+	struct tarot_generator *generator,
+	struct tarot_node *node
+) {
+	struct tarot_node *loop = Break(node)->loop;
+	write_instruction(generator, OP_PopRegion);
+	write_instruction(generator, OP_Goto);
+	write_argument(generator, WhileLoop(loop)->end);
+}
+
 static void generate(struct tarot_generator *generator, struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
@@ -1748,6 +1758,9 @@ static void generate(struct tarot_generator *generator, struct tarot_node *node)
 			generate_constant(generator, node);
 			break;
 		case NODE_Parameter:
+			break;
+		case NODE_Break:
+			generate_break(generator, node);
 			break;
 	}
 }

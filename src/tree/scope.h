@@ -15,6 +15,7 @@ struct scope_stack {
 	struct tarot_node *root;
 	struct tarot_node *class;
 	struct tarot_node *function;
+	struct tarot_node *loop;
 	struct tarot_list **scopes[10];
 	bool type_checking;
 	uint8_t nesting;

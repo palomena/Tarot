@@ -51,6 +51,7 @@ struct tarot_node {
 		struct Constant Constant;
 		struct Parameter Parameter;
 		struct Builtin Builtin;
+		struct Break Break;
 	} as;
 	struct tarot_stream_position position;
 	enum tarot_node_kind kind;
@@ -169,6 +170,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_Catch:
 		case NODE_Raise:
 		case NODE_Assert:
+		case NODE_Break:
 			return CLASS_STATEMENT;
 		case NODE_Module:
 		case NODE_Class:
@@ -237,7 +239,8 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Variable",
 		"Constant",
 		"Parameter",
-		"Builtin"
+		"Builtin",
+		"Break"
 	};
 	if (kind >= 0 and kind < lengthof(names)) {
 		return names[kind];
@@ -553,6 +556,11 @@ struct Parameter* Parameter(struct tarot_node *node) {
 struct Builtin* Builtin(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Builtin);
 	return &node->as.Builtin;
+}
+
+struct Break* Break(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Break);
+	return &node->as.Break;
 }
 
 /******************************************************************************

@@ -125,10 +125,8 @@ static void parse_command_line_arguments(int argc, char *argv[]) {
 			break;
 		case -3:
 			tarot_error(
-				"Expected an option: Argument \"%s\" is not an option! "
-				"Options are preceded by \"--\" or \"-\" "
-				"like \"--help\" or \"-h\".",
-				tarot_optarg
+				"Expected an option! Options are preceded by \"--\" or \"-\" "
+				"like \"--help\" or \"-h\"!"
 			);
 			break;
 		case OPTION_PRINT_AST:

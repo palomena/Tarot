@@ -131,7 +131,8 @@ enum tarot_node_kind {
 	NODE_Variable,
 	NODE_Constant,
 	NODE_Parameter,
-	NODE_Builtin
+	NODE_Builtin,
+	NODE_Break
 };
 
 /**
@@ -1008,6 +1009,22 @@ struct Builtin {
  *
  */
 extern struct Builtin* Builtin(struct tarot_node *node);
+
+/******************************************************************************
+ * MARK: Break
+ *****************************************************************************/
+
+/**
+ *
+ */
+struct Break {
+	struct tarot_node *loop;
+};
+
+/**
+ *
+ */
+extern struct Break* Break(struct tarot_node *node);
 
 /******************************************************************************
  * MARK: Node

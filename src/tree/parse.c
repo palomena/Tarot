@@ -1199,7 +1199,9 @@ static struct tarot_node* parse_while(struct tarot_parser *parser) {
 	if (match(parser, TAROT_TOK_WHILE, &token)) {
 		node = tarot_create_node(NODE_While, &token.position);
 		WhileLoop(node)->condition = parse_expression(parser);
+		parser->scopes.loop = node;
 		WhileLoop(node)->block = parse_scoped_block(parser, parse_statement);
+		parser->scopes.loop = NULL; /* FIXME: Fucks with nested loops and break */
 	}
 	return result(parser, node);
 }
@@ -1351,6 +1353,17 @@ static struct tarot_node* parse_print(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
+static struct tarot_node* parse_break(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match(parser, TAROT_TOK_BREAK, &token)) {
+		node = tarot_create_node(NODE_Break, &token.position);
+		Break(node)->loop = parser->scopes.loop;
+		expect(parser, TAROT_TOK_SEMICOLON);
+	}
+	return result(parser, node);
+}
+
 static struct tarot_node* parse_statement(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	(node = parse_assert(parser))     or
@@ -1359,6 +1372,7 @@ static struct tarot_node* parse_statement(struct tarot_parser *parser) {
 	(node = parse_return(parser))     or
 	(node = parse_if(parser))         or
 	(node = parse_while(parser))      or
+	(node = parse_break(parser))      or
 	(node = parse_match(parser))      or
 	(node = parse_try(parser))        or
 	(node = parse_print(parser))      or
