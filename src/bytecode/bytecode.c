@@ -1236,9 +1236,11 @@ static void generate_dict(
 	struct tarot_node *node
 ) {
 	size_t i;
+	write_instruction(generator, OP_UnTrack);
 	for (i = 0; i < Dict(node)->num_elements; i++) {
 		generate(generator, Dict(node)->elements[i]);
 	}
+	write_instruction(generator, OP_Track);
 	write_instruction(generator, OP_PushDict);
 	write_argument(generator, Dict(node)->num_elements);
 }
@@ -1361,6 +1363,12 @@ static void generate_function(
 					write_instruction(generator, OP_LoadVariablePointer);
 					write_instruction_argument_8bit(generator, index_of(symbol));
 					write_instruction(generator, OP_FreeList);
+					write_argument(generator, Type(Type(type_of(symbol))->subtype)->type);
+					break;
+				case TYPE_DICT:
+					write_instruction(generator, OP_LoadVariablePointer);
+					write_instruction_argument_8bit(generator, index_of(symbol));
+					write_instruction(generator, OP_FreeDict);
 					write_argument(generator, Type(Type(type_of(symbol))->subtype)->type);
 					break;
 			}

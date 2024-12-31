@@ -1,15 +1,17 @@
-function foo() {
-	let i = 0;
-	while true {
-		i += 1;
-		if (i > 10) {
-			break;
-		} else {
-			println(i);
-		}
-	}
+/* returning list/dict from function, handle free region | what if no assignment after func call, needs to be added to region then */
+
+function foo() -> Dict[Integer] {
+	let i = {
+		"snow": 1338,
+		"key": 69,
+		"pee pee": 1010101
+	};
+	#let x = 20;    # not free'd at return :FIXME
+	return i;
 }
 
 function main() {
-	foo();
+	println(foo()["key"]); # needs to be added to region for free, but only container is, not its elements! Refactor region ptrs (chains, children, type id) or add em all
 }
+
+# export foo as foo;

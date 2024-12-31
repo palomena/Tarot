@@ -100,6 +100,7 @@ const char* opcode_string(enum tarot_opcode opcode) {
 		"ListLength",
 		"PushDict",
 		"DictIndex",
+		"FreeDict",
 		"PrintBoolean",
 		"PrintInteger",
 		"PrintFloat",

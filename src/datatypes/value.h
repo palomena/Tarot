@@ -15,7 +15,7 @@ union tarot_value {
 	void                    *Rational;
 	void                    *Integer;
 	void                    *Pointer;
-	struct tarot_dictionary *Dict;
+	struct tarot_list       *Dict;
 	struct tarot_list       *List;
 	struct tarot_string     *String;
 	union tarot_value       *Value;

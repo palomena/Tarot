@@ -236,13 +236,27 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					break;
 				case TYPE_RATIONAL:
 					tarot_activate_relative_region(-1);
-					z.Integer = tarot_copy_rational(tarot_pop(thread).Rational);
+					z.Rational = tarot_copy_rational(tarot_pop(thread).Rational);
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
 				case TYPE_STRING:
 					tarot_activate_relative_region(-1);
-					z.Integer = tarot_copy_string(tarot_pop(thread).String);
+					z.String = tarot_copy_string(tarot_pop(thread).String);
+					tarot_activate_relative_region(+1);
+					tarot_push(thread, z);
+					break;
+				case TYPE_LIST:
+					tarot_activate_relative_region(-1);
+					z.List = tarot_copy_list(tarot_pop(thread).List);
+					/* All list elements are not in the region */
+					tarot_activate_relative_region(+1);
+					tarot_push(thread, z);
+					break;
+				case TYPE_DICT:
+					tarot_activate_relative_region(-1);
+					z.Dict = tarot_copy_dict(tarot_pop(thread).Dict);
+					/* All list elements are not in the region */
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
@@ -793,8 +807,37 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_PushDict:
-		case OP_DictIndex:
+			length = tarot_read16bit(ip, &ip);
+			z.Dict = tarot_create_dictionary();
+			for (i = 0; i < length; i++) {
+				union tarot_value value = tarot_pop(thread);
+				union tarot_value key = tarot_pop(thread);
+				tarot_dict_insert(&z.Dict, key, value);
+			}
+			tarot_push(thread, z);
 			break;
+
+		case OP_DictIndex:
+			a = tarot_pop(thread); /* key */
+			b = tarot_pop(thread); /* dict */
+			z = tarot_dict_lookup(b.Dict, a);
+			tarot_push(thread, z);
+			break;
+
+		case OP_FreeDict: {
+			enum tarot_datatype type = tarot_read16bit(ip, &ip);
+			bool state = tarot_enable_regions(false);
+			for (i = 0; i < tarot_list_length(var->List); i++) {
+				struct dict_item *item = tarot_list_element(var->List, i);
+				tarot_free_string(item->key.String);
+				if (type == TYPE_INTEGER) tarot_free_integer(item->value.Integer);
+				else if (type == TYPE_STRING) tarot_free_string(item->value.String);
+				else if (type == TYPE_RATIONAL) tarot_free_rational(item->value.Rational);
+			}
+			/*tarot_free_list(z.List);*/  /* currently still resides within region, would need a StoreList opcode */
+			tarot_enable_regions(state);
+			break;
+		}
 
 		/*
 		 * MARK: Print

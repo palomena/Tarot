@@ -48,7 +48,7 @@ extern void tarot_execute_bytecode(struct tarot_bytecode *bytecode);
 /**
  * The arguments must be passed as instances of union tarot_value!
  */
-extern void tarot_call_function(
+extern union tarot_value tarot_call_function(
 	struct tarot_virtual_machine *vm,
 	const char *function_name, ...
 );

@@ -110,6 +110,7 @@ enum tarot_opcode {
 	OP_ListLength,
 	OP_PushDict,
 	OP_DictIndex,
+	OP_FreeDict,
 	/* MARK: I/O */
 	OP_PrintBoolean,
 	OP_PrintInteger,
