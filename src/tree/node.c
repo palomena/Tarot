@@ -571,7 +571,7 @@ struct tarot_node* tarot_temp_node(
 	enum tarot_node_kind kind,
 	struct tarot_stream_position *position
 ) {
-	static struct tarot_node circular_node_buffer[8];
+	static struct tarot_node circular_node_buffer[16]; /* smaller values (8) result in error for List[List[Integer]] already */
 	static const uint8_t length = lengthof(circular_node_buffer);
 	static uint8_t index = 0;
 	struct tarot_node *node = &circular_node_buffer[index++ % length];
@@ -1540,6 +1540,9 @@ static void print_node(
 		case NODE_Literal:
 			tarot_fprintf(stream, "type:%s ", datatype_string(Literal(node)->type));
 			tarot_serialize_node(stream, node);
+			break;
+		case NODE_Type:
+			tarot_fprintf(stream, "type:%s ", datatype_string(Type(node)->type));
 			break;
 	}
 	tarot_newline(stream);

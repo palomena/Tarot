@@ -30,6 +30,12 @@ static void resolve_builtin_list_relation(struct tarot_node *node) {
 		Type(Builtin(link)->return_type)->type = TYPE_INTEGER;
 		Builtin(link)->builtin_type = TYPE_LIST;
 		Relation(node)->link = link;
+	} else if (tarot_match_string(child, "append")) {
+		struct tarot_node *link = tarot_create_node(NODE_Builtin, position_of(node));
+		Builtin(link)->return_type = tarot_create_node(NODE_Type, position_of(node));
+		Type(Builtin(link)->return_type)->type = TYPE_VOID;
+		Builtin(link)->builtin_type = TYPE_LIST;
+		Relation(node)->link = link;
 	}
 }
 

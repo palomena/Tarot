@@ -33,6 +33,7 @@ size_t tarot_total_memory(void) {
 
 struct block_header {
 	size_t size;  /**< The size in bytes of the block of memory */
+	enum tarot_datatype type;
 };
 
 static struct block_header* header_of(void *ptr) {
@@ -88,28 +89,32 @@ void tarot_pop_region(void) {
 	bool state = tarot_enable_regions(false);
 	for (i = 0; i < tarot_list_length(*current_region()); i++) {
 		void **ptr = tarot_list_element(*current_region(), i);
-		tarot_free(*ptr);
+		switch (header_of(*ptr)->type) {
+			default:
+				tarot_free(*ptr);
+				break;
+			case TYPE_INTEGER:
+				tarot_free_integer(*ptr);
+				break;
+			case TYPE_RATIONAL:
+				tarot_free_rational(*ptr);
+				break;
+			case TYPE_STRING:
+				tarot_free_string(*ptr);
+				break;
+			case TYPE_LIST:
+				tarot_free_list(*ptr);
+				break;
+			case TYPE_DICT:
+				tarot_free_dictionary(*ptr);
+				break;
+		}
 	}
 	tarot_clear_list(*current_region());
 	tarot_free_list(*current_region());
 	tarot_list_pop(&regions, NULL);
 	tarot_enable_regions(state);
 	region_index--;
-}
-
-void tarot_move_to_parent_region(void *ptr) {
-	size_t index = tarot_list_lookup(*current_region(), &ptr);
-	bool state = tarot_enable_regions(false);
-	tarot_list_remove(current_region(), index);
-	tarot_list_append(parent_region(), &ptr);
-	tarot_enable_regions(state);
-}
-
-void tarot_remove_from_region(void *ptr) {
-	size_t index = tarot_list_lookup(*current_region(), &ptr);
-	bool state = tarot_enable_regions(false);
-	tarot_list_remove(current_region(), index);
-	tarot_enable_regions(state);
 }
 
 void tarot_activate_relative_region(int rel) {
@@ -123,6 +128,22 @@ void tarot_print_region(uint16_t index) {
 		void **ptr = tarot_list_element(*get_region(index), i);
 		tarot_printf("[%zu] %p\n", i, *ptr);
 	}
+}
+
+void tarot_add_to_region(void *ptr) {
+	/* Disable regions because list_append might allocate */
+	if (region_available()) {
+		bool state = tarot_enable_regions(false);
+		tarot_list_append(current_region(), &ptr);
+		tarot_enable_regions(state);
+	}
+}
+
+void tarot_remove_from_region(void *ptr) {
+	size_t index = tarot_list_lookup(*current_region(), &ptr);
+	bool state = tarot_enable_regions(false);
+	tarot_list_remove(current_region(), index);
+	tarot_enable_regions(state);
 }
 
 size_t tarot_num_active_regions(void) {
@@ -156,6 +177,10 @@ void tarot_clear_regions(void) {
 
 /* Allocators */
 
+void tarot_tag(void *ptr, int type) {
+	header_of(ptr)->type = type;
+}
+
 void* tarot_malloc(size_t size) {
 	void *ptr = NULL;
 	struct block_header *header;
@@ -171,11 +196,11 @@ void* tarot_malloc(size_t size) {
 			total_memory = allocated_memory;
 		}
 		/* Disable regions because list_append might allocate */
-		if (region_available()) {
+		/*if (region_available()) {
 			bool state = tarot_enable_regions(false);
 			tarot_list_append(current_region(), &ptr);
 			tarot_enable_regions(state);
-		}
+		}*/
 	}
 	return ptr;
 }
@@ -199,17 +224,18 @@ void* tarot_realloc(void *ptr, size_t size) {
 		if (allocated_memory > total_memory) {
 			total_memory = allocated_memory;
 		}
-		if (region_available()) {
+		/*if (region_available()) {
 			size_t index = tarot_list_lookup(*current_region(), &ptr);
 			tarot_list_replace(*current_region(), index, &new_ptr);
-		}
+		}*/
 		num_reallocations++;
 	}
 	return new_ptr;
 }
 
 void tarot_free(void *ptr) {
-	if ((not region_available()) and ptr != NULL) {
+	/*if ((not region_available()) and ptr != NULL) {*/
+	if (ptr != NULL) {
 		struct block_header *header;
 		assert(num_frees < num_allocations);
 		header = header_of(ptr);

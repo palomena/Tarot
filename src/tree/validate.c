@@ -101,7 +101,7 @@ static void raise_invalid_argument_count_error(
 
 static bool validate_functioncall(struct tarot_node *node) {
 	struct tarot_node *function = definition_of(node);
-	struct tarot_node *parameters;
+	struct tarot_node *parameters = NULL;
 	struct tarot_node *arguments = FunctionCall(node)->arguments;
 	size_t i;
 	if (kind_of(function) == NODE_Function) {
@@ -116,8 +116,12 @@ static bool validate_functioncall(struct tarot_node *node) {
 			tarot_error_at(position_of(node), "No constructor found");
 			return false;
 		}
+	} else if (kind_of(function) == NODE_Builtin) {
+		/* ok */
+		return true;
 	} else {
 		tarot_error_at(position_of(node), "Identifier is not callable!");
+		tarot_print_node(tarot_stderr, function);
 		return false;
 	}
 	if (Block(parameters)->num_elements != Block(arguments)->num_elements) {
