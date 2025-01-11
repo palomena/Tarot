@@ -3,7 +3,9 @@
 
 #include "defines.h"
 
+struct tarot_iostream;
 struct tarot_list;
+enum tarot_datatype;
 
 extern struct tarot_list* tarot_create_list(
 	size_t objsize,
@@ -39,5 +41,8 @@ extern void tarot_list_replace(
 	size_t index,
 	void *object
 );
+extern void tarot_set_list_datatype(struct tarot_list *list, enum tarot_datatype type);
+extern enum tarot_datatype tarot_get_list_datatype(struct tarot_list *list);
+extern void tarot_print_list(struct tarot_iostream *stream, struct tarot_list *list);
 
 #endif /* TAROT_TYPE_LIST_H */

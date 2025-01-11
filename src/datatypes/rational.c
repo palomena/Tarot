@@ -34,14 +34,6 @@ void tarot_initialize_rational(tarot_rational *rational) {
 }
 
 TAROT_INLINE
-void tarot_transfer_rational(tarot_rational *rational) {
-	mpq_ptr ptr = rational;
-	tarot_move_to_parent_region(ptr);
-	tarot_move_to_parent_region(mpq_denref(ptr)->_mp_d);
-	tarot_move_to_parent_region(mpq_numref(ptr)->_mp_d);
-}
-
-TAROT_INLINE
 tarot_rational* tarot_copy_rational(tarot_rational *rational) {
 	tarot_rational *result = tarot_create_rational();
 	mpq_set(result, rational);

@@ -108,6 +108,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		switch (opcode) {
 			union tarot_value a, b, z, *var;
+			enum tarot_datatype type;
 			size_t i, length;
 			bool state;
 
@@ -142,6 +143,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_PopRegion:
+			tarot_print_region(tarot_num_active_regions()-1);
 			tarot_pop_region();
 			break;
 
@@ -157,7 +159,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		case OP_StoreInteger:
 			z = tarot_pop(thread);
-			tarot_release_integer(z.Integer);
+			tarot_remove_from_region(z.Integer);
 			state = tarot_enable_regions(false);
 			tarot_free_integer(var->Integer);
 			tarot_enable_regions(state);
@@ -182,6 +184,15 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			*var = z;
 			break;
 
+		case OP_StoreList:
+			z = tarot_pop(thread);
+			tarot_remove_from_region(z.List);
+			state = tarot_enable_regions(false);
+			tarot_free_list(var->List);
+			tarot_enable_regions(state);
+			*var = z;
+			break;
+
 		case OP_LoadValue:
 			tarot_push(thread, *tarot_variable(thread, tarot_read16bit(ip, &ip)));
 			break;
@@ -201,12 +212,19 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			var = (union tarot_value*)tarot_list_element(z.List, i);
 			break;
 
+		case OP_LoadDictIndex:
+			a = tarot_pop(thread);
+			z = tarot_pop(thread);
+			var = tarot_dict_lookup(z.List, a);
+			break;
+
 		case OP_Track:
 			tarot_enable_regions(true);
 			break;
 
 		case OP_UnTrack:
-			tarot_enable_regions(false);
+			/*tarot_enable_regions(false);*/
+			tarot_remove_from_region(tarot_top(thread).Pointer);
 			break;
 
 		/*
@@ -230,26 +248,32 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					break;
 				case TYPE_INTEGER:
 					tarot_activate_relative_region(-1);
-					z.Integer = tarot_copy_integer(tarot_pop(thread).Integer);
+					/*z.Integer = tarot_copy_integer(tarot_pop(thread).Integer);*/
+					z = tarot_pop(thread);
+					tarot_add_to_region(z.Integer);
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
 				case TYPE_RATIONAL:
 					tarot_activate_relative_region(-1);
 					z.Rational = tarot_copy_rational(tarot_pop(thread).Rational);
+					tarot_add_to_region(z.Rational);
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
 				case TYPE_STRING:
 					tarot_activate_relative_region(-1);
 					z.String = tarot_copy_string(tarot_pop(thread).String);
+					tarot_add_to_region(z.String);
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
 				case TYPE_LIST:
 					tarot_activate_relative_region(-1);
-					z.List = tarot_copy_list(tarot_pop(thread).List);
+					/*z.List = tarot_copy_list(tarot_pop(thread).List);*/
 					/* All list elements are not in the region */
+					z = tarot_pop(thread);
+					tarot_add_to_region(z.List);
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
@@ -257,6 +281,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					tarot_activate_relative_region(-1);
 					z.Dict = tarot_copy_dict(tarot_pop(thread).Dict);
 					/* All list elements are not in the region */
+					tarot_add_to_region(z.Dict);
 					tarot_activate_relative_region(+1);
 					tarot_push(thread, z);
 					break;
@@ -331,11 +356,19 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		case OP_PushInteger:
 			z.Integer = tarot_import_integer(&vm->bytecode->data[tarot_read16bit(ip, &ip)], NULL);
+			tarot_add_to_region(z.Integer);
 			tarot_push(thread, z);
 			break;
 
 		case OP_CopyInteger:
 			z.Integer = tarot_copy_integer(tarot_pop(thread).Integer);
+			tarot_add_to_region(z.Integer);
+			tarot_push(thread, z);
+			break;
+
+		case OP_CopyList:
+			z.List = tarot_copy_list(tarot_pop(thread).List);
+			tarot_add_to_region(z.List);
 			tarot_push(thread, z);
 			break;
 
@@ -346,24 +379,9 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_CastToInteger:
-			switch (tarot_read16bit(ip, &ip)) {
-				default:
-					break;
-				case TYPE_FLOAT:
-					z.Integer = tarot_create_integer_from_float(tarot_pop(thread).Float);
-					tarot_push(thread, z);
-					break;
-				case TYPE_INTEGER:
-					break;
-				case TYPE_RATIONAL:
-					z.Integer = tarot_create_integer_from_rational(tarot_pop(thread).Rational);
-					tarot_push(thread, z);
-					break;
-				case TYPE_STRING:
-					z.Integer = tarot_create_integer_from_string(tarot_pop(thread).String, 10);
-					tarot_push(thread, z);
-					break;
-			}
+			type = tarot_read16bit(ip, &ip);
+			z.Integer = tarot_integer_cast(tarot_pop(thread), type);
+			tarot_push(thread, z);
 			break;
 
 		case OP_IntegerAbs:
@@ -380,6 +398,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = tarot_pop(thread);
 			a = tarot_pop(thread);
 			z.Integer = tarot_add_integers(a.Integer, b.Integer);
+			tarot_add_to_region(z.Integer);
 			tarot_push(thread, z);
 			break;
 
@@ -387,6 +406,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = tarot_pop(thread);
 			a = tarot_pop(thread);
 			z.Integer = tarot_subtract_integers(a.Integer, b.Integer);
+			tarot_add_to_region(z.Integer);
 			tarot_push(thread, z);
 			break;
 
@@ -394,6 +414,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = tarot_pop(thread);
 			a = tarot_pop(thread);
 			z.Integer = tarot_multiply_integers(a.Integer, b.Integer);
+			tarot_add_to_region(z.Integer);
 			tarot_push(thread, z);
 			break;
 
@@ -401,6 +422,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = tarot_pop(thread);
 			a = tarot_pop(thread);
 			z.Integer = tarot_divide_integers(a.Integer, b.Integer);
+			tarot_add_to_region(z.Integer);
 			tarot_push(thread, z);
 			break;
 
@@ -408,6 +430,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = tarot_pop(thread);
 			a = tarot_pop(thread);
 			z.Integer = tarot_modulo_integers(a.Integer, b.Integer);
+			tarot_add_to_region(z.Integer);
 			tarot_push(thread, z);
 			break;
 
@@ -698,11 +721,13 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		case OP_PushString:
 			z.String = tarot_import_string(&vm->bytecode->data[tarot_read16bit(ip, &ip)]);
+			tarot_add_to_region(z.String);
 			tarot_push(thread, z);
 			break;
 
 		case OP_CopyString:
 			z.String = tarot_copy_string(tarot_pop(thread).String);
+			tarot_add_to_region(z.String);
 			tarot_push(thread, z);
 			break;
 
@@ -718,18 +743,22 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					break;
 				case TYPE_BOOLEAN:
 					z.String = tarot_create_string(tarot_bool_string(tarot_pop(thread).Boolean));
+					tarot_add_to_region(z.String);
 					tarot_push(thread, z);
 					break;
 				case TYPE_FLOAT:
 					z.String = tarot_create_string("%f", tarot_pop(thread).Float);
+					tarot_add_to_region(z.String);
 					tarot_push(thread, z);
 					break;
 				case TYPE_INTEGER:
 					z.String = tarot_integer_to_string(tarot_pop(thread).Integer);
+					tarot_add_to_region(z.String);
 					tarot_push(thread, z);
 					break;
 				case TYPE_RATIONAL:
 					z.String = tarot_rational_to_string(tarot_pop(thread).Rational);
+					tarot_add_to_region(z.String);
 					tarot_push(thread, z);
 					break;
 				case TYPE_STRING:
@@ -755,6 +784,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			b = tarot_pop(thread);
 			a = tarot_pop(thread);
 			z.String = tarot_concat_strings(a.String, b.String);
+			tarot_add_to_region(z.String);
 			tarot_push(thread, z);
 			break;
 
@@ -769,13 +799,28 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		 */
 
 		case OP_PushList:
+			type = tarot_read8bit(ip, &ip);
 			length = tarot_read16bit(ip, &ip);
 			z.List = tarot_create_list(sizeof(z), length, NULL);
+			tarot_set_list_datatype(z.List, type);
 			for (i = 0; i < length; i++) {
 				a = tarot_pop(thread);
+				switch (type) {
+					case TYPE_LIST:
+					case TYPE_DICT:
+					case TYPE_INTEGER:
+					case TYPE_RATIONAL:
+					case TYPE_STRING:
+						tarot_remove_from_region(a.Pointer);
+						break;
+					default:
+						break;
+				} /* remove track/untrack and just do the region stuff here */
 				tarot_list_append(&z.List, &a);
 			}
 			tarot_push(thread, z);
+			tarot_add_to_region(z.List);
+			printf("List: %p\n", z.List);
 			break;
 
 		case OP_ListIndex:
@@ -788,22 +833,32 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		case OP_FreeList: {
 			enum tarot_datatype type = tarot_read16bit(ip, &ip);
-			bool state = tarot_enable_regions(false);
-			for (i = 0; i < tarot_list_length(var->List); i++) {
-				a = *(union tarot_value*)tarot_list_element(var->List, i);
-				if (type == TYPE_INTEGER) tarot_free_integer(a.Integer);
-				else if (type == TYPE_STRING) tarot_free_string(a.String);
-				else if (type == TYPE_RATIONAL) tarot_free_rational(a.Rational);
-			}
-			/*tarot_free_list(z.List);*/  /* currently still resides within region, would need a StoreList opcode */
-			tarot_enable_regions(state);
+			tarot_free_list(var->List);
 			break;
 		}
 
 		case OP_ListLength:
 			z = tarot_pop(thread);
 			a.Integer = tarot_create_integer_from_short(tarot_list_length(z.List));
+			tarot_add_to_region(a.Integer);
 			tarot_push(thread, a);
+			break;
+
+		/* should be used for create too, as it puts less stress on the stack */
+		case OP_ListAppend:
+			z = tarot_pop(thread);
+			switch (tarot_get_list_datatype(var->List)) {
+				case TYPE_LIST:
+				case TYPE_DICT:
+				case TYPE_INTEGER:
+				case TYPE_RATIONAL:
+				case TYPE_STRING:
+					tarot_remove_from_region(z.Pointer);
+					break;
+				default:
+					break;
+			}
+			tarot_list_append(&var->List, &z);
 			break;
 
 		case OP_PushDict:
@@ -814,13 +869,15 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 				union tarot_value key = tarot_pop(thread);
 				tarot_dict_insert(&z.Dict, key, value);
 			}
+			tarot_add_to_region(z.Dict);
+			tarot_set_list_datatype(z.Dict, TYPE_STRING);
 			tarot_push(thread, z);
 			break;
 
 		case OP_DictIndex:
 			a = tarot_pop(thread); /* key */
 			b = tarot_pop(thread); /* dict */
-			z = tarot_dict_lookup(b.Dict, a);
+			z = *tarot_dict_lookup(b.Dict, a);
 			tarot_push(thread, z);
 			break;
 
@@ -863,6 +920,14 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_print_string(tarot_stdout, tarot_pop(thread).String);
 			break;
 
+		case OP_PrintList:
+			tarot_print_list(tarot_stdout, tarot_pop(thread).List);
+			break;
+
+		case OP_PrintDict:
+			tarot_print_dict(tarot_stdout, tarot_pop(thread).Dict);
+			break;
+
 		case OP_NewLine:
 			tarot_newline(tarot_stdout);
 			break;
@@ -870,6 +935,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_Input: {
 			tarot_print_string(tarot_stdout, tarot_pop(thread).String);
 			z.String = tarot_input_string(tarot_stdin);
+			tarot_add_to_region(z.String);
 			tarot_push(thread, z);
 			break;
 		}

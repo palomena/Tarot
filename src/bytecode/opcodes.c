@@ -25,6 +25,7 @@ const char* opcode_string(enum tarot_opcode opcode) {
 		"LoadArgument",
 		"LoadVariablePointer",
 		"LoadListIndex",
+		"LoadDictIndex",
 		"Track",
 		"UnTrack",
 		"PushTrue",
@@ -98,6 +99,7 @@ const char* opcode_string(enum tarot_opcode opcode) {
 		"ListIndex",
 		"FreeList",
 		"ListLength",
+		"ListAppend",
 		"PushDict",
 		"DictIndex",
 		"FreeDict",
@@ -106,6 +108,10 @@ const char* opcode_string(enum tarot_opcode opcode) {
 		"PrintFloat",
 		"PrintRational",
 		"PrintString",
+		"PrintList",
+		"PrintDict",
+		"StoreList",
+		"CopyList",
 		"NewLine",
 		"Input"
 	};

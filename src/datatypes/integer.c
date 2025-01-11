@@ -4,6 +4,7 @@
 TAROT_INLINE
 tarot_integer* tarot_create_integer(void) {
 	tarot_integer *integer = tarot_malloc(sizeof(mpz_t));
+	tarot_tag(integer, TYPE_INTEGER);
 	tarot_initialize_integer(integer);
 	return integer;
 }
@@ -56,13 +57,6 @@ tarot_integer* tarot_create_integer_from_string(
 		);
 	}
 	return integer;
-}
-
-TAROT_INLINE
-void tarot_transfer_integer(tarot_integer *integer) {
-	mpz_ptr ptr = integer;
-	tarot_move_to_parent_region(ptr);
-	tarot_move_to_parent_region(ptr->_mp_d);
 }
 
 TAROT_INLINE
@@ -285,4 +279,23 @@ tarot_integer* tarot_integer_neg(tarot_integer *value) {
 	tarot_integer *result = tarot_create_integer();
 	mpz_neg(result, value);
 	return result;
+}
+
+tarot_integer* tarot_integer_cast(
+	union tarot_value value,
+	enum tarot_datatype type
+) {
+	switch (type) {
+		default:
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unhandled type");
+			return value.Integer;
+		case TYPE_FLOAT:
+			return tarot_create_integer_from_float(value.Float);
+		case TYPE_INTEGER:
+			return value.Integer;
+		case TYPE_RATIONAL:
+			return tarot_create_integer_from_rational(value.Rational);
+		case TYPE_STRING:
+			return tarot_create_integer_from_string(value.String, 10);
+	}
 }

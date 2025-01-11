@@ -5,6 +5,7 @@ struct tarot_list {
 	size_t length;
 	size_t capacity;
 	size_t objsize;
+	enum tarot_datatype element_type;
 	bool (*match)(void *element, void *object);
 };
 
@@ -26,6 +27,7 @@ struct tarot_list* tarot_create_list(
 	list->capacity = n;
 	list->objsize = objsize;
 	list->match = match;
+	tarot_tag(list, TYPE_LIST);
 	return list;
 }
 
@@ -40,13 +42,50 @@ struct tarot_list* tarot_copy_list(struct tarot_list *list) {
 		list->capacity,
 		list->match
 	);
-	memcpy(data_of(copy), data_of(list), list->length * list->objsize);
+	tarot_set_list_datatype(copy, list->element_type);
 	copy->length = list->length;
+	switch (list->element_type) {
+		size_t i;
+		default:
+			memcpy(data_of(copy), data_of(list), list->length * list->objsize);
+			break;
+		case TYPE_INTEGER:
+			for (i = 0; i < list->length; i++) {
+				union tarot_value *value = tarot_list_element(list, i);
+				union tarot_value *valptr = tarot_list_element(copy, i);
+				valptr->Integer = tarot_copy_integer(value->Integer);
+			}
+			break;
+	}
 	return copy;
 }
 
 void tarot_free_list(struct tarot_list *list) {
-	tarot_free(list);
+	if (list != NULL) {
+		size_t i;
+		bool state = tarot_enable_regions(false);
+		for (i = 0; i < list->length; i++) {
+			union tarot_value *value = tarot_list_element(list, i);
+			switch (list->element_type) {
+				default:
+					break;
+				case TYPE_LIST:
+					tarot_free_list(value->List);
+					break;
+				case TYPE_INTEGER:
+					tarot_free_integer(value->Integer);
+					break;
+				case TYPE_RATIONAL:
+					tarot_free_rational(value->Rational);
+					break;
+				case TYPE_STRING:
+					tarot_free_string(value->String);
+					break;
+			}
+		}
+		tarot_enable_regions(state);
+		tarot_free(list);
+	}
 }
 
 void* tarot_list_to_array(struct tarot_list *list) {
@@ -221,3 +260,48 @@ void tarot_list_replace(
 ) {
 	memcpy(tarot_list_element(list, index), object, list->objsize);
 }
+
+void tarot_set_list_datatype(struct tarot_list *list, enum tarot_datatype type) {
+	list->element_type = type;
+}
+
+enum tarot_datatype tarot_get_list_datatype(struct tarot_list *list) {
+	return list->element_type;
+}
+
+void tarot_print_list(struct tarot_iostream *stream, struct tarot_list *list) {
+	size_t i;
+	tarot_fputc(stream, '[');
+	for (i = 0; i < list->length; i++) {
+		union tarot_value *value = tarot_list_element(list, i);
+		bool is_first_element = i == 0;
+		if (not is_first_element) {
+			tarot_fputc(stream, ',');
+			tarot_fputc(stream, ' ');
+		}
+		switch (list->element_type) {
+			default:
+				tarot_print("???");
+				break;
+			case TYPE_FLOAT:
+				tarot_fprintf(stream, "%f", value->Float);
+				break;
+			case TYPE_INTEGER:
+				tarot_print_integer(stream, value->Integer);
+				break;
+			case TYPE_LIST:
+				tarot_print_list(stream, value->List);
+				break;
+			case TYPE_RATIONAL:
+				tarot_print_rational(stream, value->Rational);
+				break;
+			case TYPE_STRING:
+				tarot_fputc(stream, '"');
+				tarot_print_string(stream, value->String);
+				tarot_fputc(stream, '"');
+				break;
+		}
+	}
+	tarot_fputc(stream, ']');
+}
+/* where are lists used? maybe always have datatype? or different list type */

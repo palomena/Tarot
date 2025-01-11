@@ -11,7 +11,7 @@ extern struct tarot_list* tarot_copy_dict(struct tarot_list *dict);
 extern void tarot_free_dictionary(struct tarot_list *dict);
 extern bool tarot_dict_contains(struct tarot_list *dict, union tarot_value key);
 extern void tarot_dict_insert(struct tarot_list **dict, union tarot_value key, union tarot_value value);
-extern union tarot_value tarot_dict_lookup(struct tarot_list *dict, union tarot_value key);
+extern union tarot_value* tarot_dict_lookup(struct tarot_list *dict, union tarot_value key);
 
 #ifdef TAROT_SOURCE
 

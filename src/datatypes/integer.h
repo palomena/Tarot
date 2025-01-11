@@ -6,6 +6,8 @@
 /* Forward declarations */
 struct tarot_string;
 struct tarot_iostream;
+union tarot_value;
+enum tarot_datatype;
 
 typedef void tarot_integer;
 
@@ -19,7 +21,6 @@ extern tarot_integer* tarot_create_integer_from_string(
 	struct tarot_string *string,
 	int base
 );
-extern void tarot_transfer_integer(tarot_integer *integer);
 extern void tarot_release_integer(tarot_integer *integer);
 extern tarot_integer* tarot_copy_integer(tarot_integer *integer);
 extern void tarot_print_integer(
@@ -76,5 +77,9 @@ extern size_t tarot_export_integer(
 extern tarot_integer* tarot_integer_abs(tarot_integer *value);
 
 extern tarot_integer* tarot_integer_neg(tarot_integer *value);
+extern tarot_integer* tarot_integer_cast(
+	union tarot_value value,
+	enum tarot_datatype type
+);
 
 #endif /* TAROT_TYPE_INTEGER_H */

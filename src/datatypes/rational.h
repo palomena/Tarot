@@ -22,7 +22,6 @@ extern tarot_rational* tarot_create_rational_from_float(double value);
 extern tarot_rational* tarot_create_rational_from_short(int32_t value);
 extern tarot_rational* tarot_create_rational_from_integer(tarot_integer *value);
 extern tarot_rational* tarot_create_rational_from_string(struct tarot_string *string);
-extern void tarot_transfer_rational(tarot_rational *value);
 extern void tarot_rational_from_stream(
 	tarot_rational *rational,
 	struct tarot_iostream *stream

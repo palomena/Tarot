@@ -29,6 +29,7 @@ enum tarot_opcode {
 	OP_LoadArgument,
 	OP_LoadVariablePointer,
 	OP_LoadListIndex,
+	OP_LoadDictIndex,
 	OP_Track,
 	OP_UnTrack,
 	/* MARK: Logical */
@@ -108,6 +109,7 @@ enum tarot_opcode {
 	OP_ListIndex,
 	OP_FreeList,
 	OP_ListLength,
+	OP_ListAppend,
 	OP_PushDict,
 	OP_DictIndex,
 	OP_FreeDict,
@@ -117,6 +119,10 @@ enum tarot_opcode {
 	OP_PrintFloat,
 	OP_PrintRational,
 	OP_PrintString,
+	OP_PrintList,
+	OP_PrintDict,
+	OP_StoreList,
+	OP_CopyList,
 	OP_NewLine,
 	OP_Input
 };
