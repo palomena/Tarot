@@ -18,7 +18,6 @@ enum tarot_opcode {
 	OP_CallForeignFunction,
 	OP_CallFunction,
 	OP_Return,
-	OP_ReturnValue,
 	/* MARK: Memory */
 	OP_PushRegion,
 	OP_PopRegion,
@@ -75,6 +74,9 @@ enum tarot_opcode {
 	OP_FloatGreaterThan,
 	OP_FloatGreaterEqual,
 	OP_FloatEquality,
+	OP_FloatMathSin,
+	OP_FloatMathCos,
+	OP_FloatMathSqrt,
 	/* MARK: Rational */
 	OP_PushRational,
 	OP_CopyRational,

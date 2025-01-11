@@ -1,17 +1,24 @@
-/* returning list/dict from function, handle free region | what if no assignment after func call, needs to be added to region then */
-
-function foo() -> Dict[Integer] {
-	let i = {
-		"snow": 1338,
-		"key": 69,
-		"pee pee": 1010101
-	};
-	#let x = 20;    # not free'd at return :FIXME
-	return i;
+function boo() -> List[Integer] {
+	let x =  [1,2,3,4,5,6,7];
+	x.append(10/2);
+	return x;
 }
 
 function main() {
-	println(foo()["key"]); # needs to be added to region for free, but only container is, not its elements! Refactor region ptrs (chains, children, type id) or add em all
+	let sum = Integer(0);
+	let i   = Integer(0);
+	let list = boo();
+	while i < list.length {
+		sum += list[i];
+		i += 1;
+	}
+	println(f"Sum: {abs(sum)}");
 }
 
+########################################
+# TODO:
 # export foo as foo;
+# reduce number of allocations
+# rename add to region: track, untrack
+# exceptions
+# for element in list {} # how to get index too?

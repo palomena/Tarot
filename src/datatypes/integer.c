@@ -60,15 +60,6 @@ tarot_integer* tarot_create_integer_from_string(
 }
 
 TAROT_INLINE
-void tarot_release_integer(tarot_integer *integer) {
-	mpz_ptr ptr = integer;
-	tarot_remove_from_region(ptr);
-	if (ptr->_mp_alloc > 0) {
-		tarot_remove_from_region(ptr->_mp_d);
-	}
-}
-
-TAROT_INLINE
 tarot_integer* tarot_copy_integer(tarot_integer *integer) {
 	tarot_integer *result = tarot_create_integer();
 	mpz_init_set(result, integer);

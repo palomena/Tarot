@@ -4,10 +4,8 @@
 TAROT_INLINE
 static void stack_push(struct tarot_stack *stack, union tarot_value value) {
 	if (stack->ptr >= stack->size) {
-		bool state = tarot_enable_regions(false);
 		stack->size = 16 + stack->size * 2;
 		stack->base = tarot_realloc(stack->base, sizeof(value) * stack->size);
-		tarot_enable_regions(state);
 	}
 	stack->base[stack->ptr++] = value;
 }
@@ -31,17 +29,16 @@ static void clear_stack(struct tarot_stack *stack) {
 }
 
 TAROT_INLINE
-static struct stackframe* current_frame(struct tarot_callstack *callstack) {
-	return &callstack->frames[callstack->index-1];
+struct stackframe* current_frame(struct tarot_thread *thread) {
+	assert(thread->callstack.index > 0);
+	return &thread->callstack.frames[thread->callstack.index-1];
 }
 
 TAROT_INLINE
 static void push_frame(struct tarot_callstack *callstack) {
 	if (callstack->index >= callstack->size) {
-		bool state = tarot_enable_regions(false);
 		callstack->size = 8 + callstack->size * 2;
 		callstack->frames = tarot_realloc(callstack->frames, sizeof(callstack->frames[0]) * callstack->size);
-		tarot_enable_regions(state);
 	}
 	callstack->index++;
 }
@@ -70,8 +67,12 @@ union tarot_value tarot_top(struct tarot_thread *thread) {
 	return stack_top(&thread->stack);
 }
 
+union tarot_value* tarot_topptr(struct tarot_thread *thread) {
+	return &thread->stack.base[thread->stack.ptr-1];
+}
+
 union tarot_value tarot_argument(struct tarot_thread *thread, uint8_t index) {
-	uint8_t num_variables = tarot_num_variables(current_frame(&thread->callstack)->function);
+	uint8_t num_variables = tarot_num_variables(current_frame(thread)->function);
 	return thread->stack.base[thread->stack.baseptr - num_variables - index - 1];
 }
 
@@ -84,10 +85,10 @@ union tarot_value* tarot_variable(struct tarot_thread *thread, uint8_t index) {
 /* return: [baseptr|ptr] [arguments] [space for variables] */
 uint16_t tarot_call(struct tarot_thread *thread, struct tarot_function *function) {
 	push_frame(&thread->callstack);
-	current_frame(&thread->callstack)->return_address = thread->instruction_pointer;
-	current_frame(&thread->callstack)->function = function;
-	current_frame(&thread->callstack)->baseptr = thread->stack.baseptr;
-	current_frame(&thread->callstack)->ptr = thread->stack.ptr;
+	current_frame(thread)->return_address = thread->instruction_pointer;
+	current_frame(thread)->function = function;
+	current_frame(thread)->baseptr = thread->stack.baseptr;
+	current_frame(thread)->ptr = thread->stack.ptr;
 	thread->stack.ptr += tarot_num_variables(function);
 	thread->stack.baseptr = thread->stack.ptr;
 	return function->address;
@@ -95,13 +96,14 @@ uint16_t tarot_call(struct tarot_thread *thread, struct tarot_function *function
 
 void* tarot_return(struct tarot_thread *thread) {
 	union tarot_value return_value;
-	bool returns_value = tarot_returns(current_frame(&thread->callstack)->function);
-	void *address = current_frame(&thread->callstack)->return_address;
+	bool returns_value = tarot_returns(current_frame(thread)->function);
+	tarot_clear_regions(thread);
+	void *address = current_frame(thread)->return_address;
 	if (returns_value) {
 		return_value = tarot_pop(thread);
 	}
-	thread->stack.baseptr = current_frame(&thread->callstack)->baseptr;
-	thread->stack.ptr = current_frame(&thread->callstack)->ptr - tarot_num_parameters(current_frame(&thread->callstack)->function); /* discard call args from stack */
+	thread->stack.baseptr = current_frame(thread)->baseptr;
+	thread->stack.ptr = current_frame(thread)->ptr - tarot_num_parameters(current_frame(thread)->function); /* discard call args from stack */
 	pop_frame(&thread->callstack);
 	if (returns_value) {
 		tarot_push(thread, return_value);

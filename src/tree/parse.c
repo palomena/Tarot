@@ -552,6 +552,45 @@ static struct tarot_node* parse_abs_expression(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
+static struct tarot_node* parse_sin_expression(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match_identifier(parser, "sin", &token)) {
+		node = tarot_create_node(NODE_Abs, &token.position);
+		tarot_clear_token(&token);
+		expect(parser, TAROT_TOK_OPEN_BRACKET);
+		AbsExpression(node)->expression = parse_expression(parser);
+		expect(parser, TAROT_TOK_CLOSE_BRACKET);
+	}
+	return result(parser, node);
+}
+
+static struct tarot_node* parse_cos_expression(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match_identifier(parser, "cos", &token)) {
+		node = tarot_create_node(NODE_Abs, &token.position);
+		tarot_clear_token(&token);
+		expect(parser, TAROT_TOK_OPEN_BRACKET);
+		AbsExpression(node)->expression = parse_expression(parser);
+		expect(parser, TAROT_TOK_CLOSE_BRACKET);
+	}
+	return result(parser, node);
+}
+
+static struct tarot_node* parse_sqrt_expression(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match_identifier(parser, "sin", &token)) {
+		node = tarot_create_node(NODE_Abs, &token.position);
+		tarot_clear_token(&token);
+		expect(parser, TAROT_TOK_OPEN_BRACKET);
+		AbsExpression(node)->expression = parse_expression(parser);
+		expect(parser, TAROT_TOK_CLOSE_BRACKET);
+	}
+	return result(parser, node);
+}
+
 static struct tarot_node* parse_input(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;

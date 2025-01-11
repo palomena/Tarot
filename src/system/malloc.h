@@ -3,19 +3,6 @@
 
 #include "defines.h"
 
-#ifdef TAROT_SOURCE
-extern void tarot_initialize_memory_functions(void);
-extern void tarot_clear_regions(void); /* TODO: rename to deinitialize_mem...? */
-#endif
-
-extern bool tarot_enable_regions(bool enable);
-extern void tarot_push_region(void);
-extern void tarot_pop_region(void);
-extern void tarot_activate_relative_region(int rel);
-extern void tarot_print_region(uint16_t index);
-extern void tarot_add_to_region(void *ptr);
-extern void tarot_remove_from_region(void *ptr);
-
 extern void* tarot_malloc(size_t size);
 extern void* tarot_realloc(void *ptr, size_t size);
 extern void  tarot_free(void *ptr);
@@ -27,6 +14,15 @@ extern size_t tarot_num_frees(void);
 extern size_t tarot_total_memory(void);
 extern size_t tarot_num_active_regions(void);
 
-#endif /* TAROT_MALLOC_H */
+#ifdef TAROT_SOURCE
 
-/* TODO: region.h and object.h for object alloc */
+struct block_header {
+	size_t size;  /**< The size in bytes of the block of memory */
+	int type;
+};
+
+extern struct block_header* header_of(void *ptr);
+
+#endif /* TAROT_SOURCE */
+
+#endif /* TAROT_MALLOC_H */

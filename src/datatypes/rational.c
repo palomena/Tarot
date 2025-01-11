@@ -17,18 +17,6 @@ void tarot_free_rational(tarot_rational *rational) {
 }
 
 TAROT_INLINE
-void tarot_release_rational(tarot_rational *rational) {
-	mpq_ptr ptr = rational;
-	tarot_remove_from_region(ptr);
-	if (ptr->_mp_den._mp_alloc > 0) {
-		tarot_remove_from_region(ptr->_mp_den._mp_d);
-	}
-	if (ptr->_mp_num._mp_alloc > 0) {
-		tarot_remove_from_region(ptr->_mp_num._mp_d);
-	}
-}
-
-TAROT_INLINE
 void tarot_initialize_rational(tarot_rational *rational) {
 	mpq_init(rational);
 }

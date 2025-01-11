@@ -21,7 +21,6 @@ extern tarot_integer* tarot_create_integer_from_string(
 	struct tarot_string *string,
 	int base
 );
-extern void tarot_release_integer(tarot_integer *integer);
 extern tarot_integer* tarot_copy_integer(tarot_integer *integer);
 extern void tarot_print_integer(
 	struct tarot_iostream *stream,

@@ -1,4 +1,5 @@
-function main() {
+/****
+function pain() {
 	if input("Enter Value:") == "loop" {
 		let i = 0;
 		while i < 10 {
@@ -7,5 +8,14 @@ function main() {
 		}
 	} else {
 		print("Hello!");
+	}
+}
+****/
+
+public function main() {
+	try {
+		let x = 20 + 30;
+	} catch {
+		println("Catched!");
 	}
 }

@@ -63,7 +63,6 @@ struct tarot_list* tarot_copy_list(struct tarot_list *list) {
 void tarot_free_list(struct tarot_list *list) {
 	if (list != NULL) {
 		size_t i;
-		bool state = tarot_enable_regions(false);
 		for (i = 0; i < list->length; i++) {
 			union tarot_value *value = tarot_list_element(list, i);
 			switch (list->element_type) {
@@ -83,7 +82,6 @@ void tarot_free_list(struct tarot_list *list) {
 					break;
 			}
 		}
-		tarot_enable_regions(state);
 		tarot_free(list);
 	}
 }
@@ -270,6 +268,7 @@ enum tarot_datatype tarot_get_list_datatype(struct tarot_list *list) {
 }
 
 void tarot_print_list(struct tarot_iostream *stream, struct tarot_list *list) {
+	printf("list: %p\n", list);
 	size_t i;
 	tarot_fputc(stream, '[');
 	for (i = 0; i < list->length; i++) {

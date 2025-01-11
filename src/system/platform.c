@@ -15,6 +15,16 @@ static void determine_byteorder(void) {
 	byteorder = (*((char*)&x) == 1) ? TAROT_LITTLE_ENDIAN : TAROT_BIG_ENDIAN;
 }
 
+static void* gmp_realloc(void *ptr, size_t old_size, size_t size) {
+	unused(old_size);
+	return tarot_realloc(ptr, size);
+}
+
+static void gmp_free(void *ptr, size_t size) {
+	unused(size);
+	tarot_free(ptr);
+}
+
 void tarot_initialize(const struct tarot_platform_config *cfg) {
 	assert(not is_initialized);
 	assert(sizeof(int8_t)   * CHAR_BIT == 8);
@@ -28,7 +38,7 @@ void tarot_initialize(const struct tarot_platform_config *cfg) {
 	tarot_open_stdout(tarot_platform.cout);
 	tarot_open_stderr(tarot_platform.cerr);
 	tarot_open_stdin(tarot_platform.cin);
-	tarot_initialize_memory_functions();
+	mp_set_memory_functions(tarot_malloc, gmp_realloc, gmp_free);
 	is_initialized = true;
 	tarot_log("Initialized platform interface");
 }
@@ -40,19 +50,13 @@ bool tarot_is_initialized(void) {
 
 int tarot_exit(void) {
 	if (is_initialized) {
-		tarot_clear_regions();
+		/*tarot_clear_regions();*/
 		tarot_log("De-initialized platform interface");
 		if (tarot_num_allocations() != tarot_num_frees()) {
 			tarot_warning(
 				"Leaked memory: %zu allocations / %zu frees",
 				tarot_num_allocations(),
 				tarot_num_frees()
-			);
-		}
-		if (tarot_num_active_regions() > 0) {
-			tarot_warning(
-				"Memory Region still active: %zu!",
-				tarot_num_active_regions()
 			);
 		}
 		tarot_fclose(tarot_stdout);

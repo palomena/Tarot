@@ -39,6 +39,7 @@
 #include "system/logging.h"
 #include "system/malloc.h"
 #include "system/platform.h"
+#include "system/region.h"
 #include "system/string.h"
 
 #include "tree/tree.h"

@@ -288,13 +288,12 @@ static void disassemble(
 		case OP_PushList:
 		case OP_PushDict:
 			print_type(stream, tarot_read8bit(ip, &ip));
-			print_argument(stream, read_argument(&ip));
 			break;
 		case OP_CastToFloat:
 		case OP_CastToInteger:
 		case OP_CastToRational:
 		case OP_CastToString:
-		case OP_ReturnValue:
+		case OP_Return:
 		case OP_FreeList:
 		case OP_FreeDict:
 			print_type(stream, read_argument(&ip));
@@ -1137,7 +1136,7 @@ static void generate_relation(
 	if (kind_of(Relation(node)->link) == NODE_Builtin) {
 		struct tarot_node *builtin = Relation(node)->link;
 		if (Builtin(builtin)->builtin_type == TYPE_LIST) {
-			if (tarot_match_string(Builtin(builtin)->name, "length")) {
+			/*if (tarot_match_string(Builtin(builtin)->name, "length"))*/ {
 				generate(generator, Relation(node)->parent);
 				write_instruction(generator, OP_ListLength);
 			}
@@ -1236,15 +1235,15 @@ static void generate_list(
 ) {
 	size_t i;
 	bool must_copy = generator->must_copy; /* TODO: Or even better determine this in analyze and write it to Identifier Node struct */
+	write_instruction(generator, OP_PushList);
+	write_instruction_argument_8bit(generator, Type(Type(type_of(node))->subtype)->type);
 	generator->must_copy = true;
-	for (i = List(node)->num_elements; i > 0; i--) {
-		generate(generator, List(node)->elements[i-1]);
+	for (i = 0; i < List(node)->num_elements; i++) {
+		generate(generator, List(node)->elements[i]);
+		write_instruction(generator, OP_ListAppend);
 		/* FIXME: If variable, we need a copy! */
 	}
 	generator->must_copy = must_copy;
-	write_instruction(generator, OP_PushList);
-	write_instruction_argument_8bit(generator, Type(Type(type_of(node))->subtype)->type);
-	write_argument(generator, List(node)->num_elements);
 }
 
 static void generate_dict(
@@ -1374,10 +1373,10 @@ static void generate_return(
 	/* Need to free all variables except the one we are returning */
 	free_function_variables(generator, ReturnStatement(node)->function, ReturnStatement(node)->expression);
 	generate(generator, ReturnStatement(node)->expression);
-	if (kind_of(ReturnStatement(node)->expression) == NODE_Literal) {
+	if (kind_of(ReturnStatement(node)->expression) != NODE_Identifier) {
 		write_instruction(generator, OP_UnTrack);
 	}
-	write_instruction(generator, OP_ReturnValue);
+	write_instruction(generator, OP_Return);
 	write_argument(generator, Type(type_of(ReturnStatement(node)->expression))->type);
 }
 
@@ -1409,6 +1408,7 @@ static void generate_function(
 	generate(generator, FunctionDefinition(node)->block);
 	free_function_variables(generator, node, NULL);
 	write_instruction(generator, OP_Return);
+	write_argument(generator, TYPE_VOID);
 }
 
 static void generate_foreign_function(
