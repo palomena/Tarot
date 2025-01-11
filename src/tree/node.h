@@ -724,6 +724,9 @@ extern struct InputExpression* InputExpression(struct tarot_node *node);
 struct TryStatement {
 	struct tarot_node *block;
 	struct tarot_node *handlers;
+	size_t end;
+	size_t handlers_start;
+	size_t handlers_end;
 };
 
 /**
@@ -741,6 +744,7 @@ extern struct TryStatement* TryStatement(struct tarot_node *node);
 struct CatchStatement {
 	struct tarot_node *identifiers;
 	struct tarot_node *block;
+	struct tarot_node *try;
 };
 
 /**
@@ -757,6 +761,7 @@ extern struct CatchStatement* CatchStatement(struct tarot_node *node);
  */
 struct RaiseStatement {
 	struct tarot_node *identififer;
+	uint16_t uid;
 };
 
 /**

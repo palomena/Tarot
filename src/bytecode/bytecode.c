@@ -45,6 +45,10 @@ uint8_t* tarot_bytecode_data(struct tarot_bytecode_header *bytecode) {
 	return tarot_bytecode_foreign_functions(bytecode) + tarot_align(bytecode->size.foreign_functions);
 }
 
+const char* read_string(struct tarot_bytecode *bytecode, uint16_t offset) {
+	return (const char*)&bytecode->data[offset];
+}
+
 static struct tarot_function* function_index(
 	struct tarot_bytecode_header *bytecode,
 	size_t index
@@ -57,10 +61,6 @@ static struct tarot_function* foreign_function_index(
 	size_t index
 ) {
 	return (struct tarot_function*)&tarot_bytecode_foreign_functions(bytecode)[index * sizeof(struct tarot_function)];
-}
-
-static const char* read_string(struct tarot_bytecode *bytecode, uint16_t address) {
-	return (const char*)&bytecode->data[address];
 }
 
 static uint16_t read_argument(uint8_t **ip) {
@@ -283,6 +283,7 @@ static void disassemble(
 		case OP_LoadArgument:
 		case OP_Goto:
 		case OP_GotoIfFalse:
+		case OP_PushTry:
 			print_argument(stream, read_argument(&ip));
 			break;
 		case OP_PushList:
@@ -1309,6 +1310,7 @@ static void generate_raise(
 	struct tarot_node *node
 ) {
 	write_instruction(generator, OP_RaiseException);
+	write_argument(generator, RaiseStatement(node)->uid);
 }
 
 /* If not used at final return, might free before initialization! */
@@ -1634,6 +1636,31 @@ static void generate_input(
 	write_instruction(generator, OP_Input);
 }
 
+static void generate_try(
+	struct tarot_generator *generator,
+	struct tarot_node *node
+) {
+	write_instruction(generator, OP_PushTry);
+	write_argument(generator, TryStatement(node)->handlers_start);
+	generate(generator, TryStatement(node)->block);
+	write_instruction(generator, OP_PopTry);
+	TryStatement(node)->end = generator->offset.instructions;
+	write_instruction(generator, OP_Goto);
+	write_argument(generator, TryStatement(node)->handlers_end);
+	TryStatement(node)->handlers_start = generator->offset.instructions;
+	generate(generator, TryStatement(node)->handlers);
+	TryStatement(node)->handlers_end = generator->offset.instructions;
+}
+
+static void generate_catch(
+	struct tarot_generator *generator,
+	struct tarot_node *node
+) {
+	generate(generator, CatchStatement(node)->block);
+	write_instruction(generator, OP_Goto);
+	write_argument(generator, TryStatement(CatchStatement(node)->try)->end);
+}
+
 static void generate_variable(
 	struct tarot_generator *generator,
 	struct tarot_node *node
@@ -1790,7 +1817,10 @@ static void generate(struct tarot_generator *generator, struct tarot_node *node)
 			generate_input(generator, node);
 			break;
 		case NODE_Try:
+			generate_try(generator, node);
+			break;
 		case NODE_Catch:
+			generate_catch(generator, node);
 			break;
 		case NODE_Raise:
 			generate_raise(generator, node);

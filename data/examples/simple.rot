@@ -19,6 +19,5 @@ function main() {
 # TODO:
 # export foo as foo;
 # reduce number of allocations
-# rename add to region: track, untrack
 # exceptions
 # for element in list {} # how to get index too?

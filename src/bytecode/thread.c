@@ -154,3 +154,26 @@ void print_thread(struct tarot_thread *thread) {
 		}
 	}
 }
+
+void push_try(struct tarot_thread *thread, uint16_t handlers_start) {
+	assert(thread->exceptstack.index < lengthof(thread->exceptstack.frames));
+	thread->exceptstack.frames[thread->exceptstack.index++] = handlers_start;
+}
+
+void pop_try(struct tarot_thread *thread) {
+	assert(thread->exceptstack.index > 0);
+	thread->exceptstack.index--;
+}
+
+uint16_t current_try(struct tarot_thread *thread) {
+	assert(thread->exceptstack.index > 0);
+	return thread->exceptstack.frames[thread->exceptstack.index-1];
+}
+
+bool handle_exception(struct tarot_thread *thread) {
+	unsigned int i;
+	for (i = thread->exceptstack.index; i > 0; i--) {
+		uint16_t frame = thread->exceptstack.frames[i-1];
+
+	}
+}

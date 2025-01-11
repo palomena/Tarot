@@ -228,7 +228,7 @@ static enum tarot_visibility read_visibility(struct tarot_parser *parser) {
 	return result;
 }
 
-static struct tarot_string* read_string(struct tarot_parser *parser) {
+static struct tarot_string* get_string(struct tarot_parser *parser) {
 	struct tarot_string *string = NULL;
 	struct tarot_token token;
 	if (match(parser, TAROT_TOK_STRING, &token)) {
@@ -1344,9 +1344,14 @@ static struct tarot_node* parse_try(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;
 	if (match(parser, TAROT_TOK_TRY, &token)) {
+		size_t i;
 		node = tarot_create_node(NODE_Try, &token.position);
 		TryStatement(node)->block = parse_scoped_block(parser, parse_statement);
 		TryStatement(node)->handlers = parse_block(parser, parse_catch);
+		for (i = 0; i < Block(TryStatement(node)->handlers)->num_elements; i++) {
+			struct tarot_node *element = Block(TryStatement(node)->handlers)->elements[i];
+			CatchStatement(element)->try = node;
+		}
 	}
 	return result(parser, node);
 }
@@ -1356,7 +1361,7 @@ static struct tarot_node* parse_import(struct tarot_parser *parser) {
 	struct tarot_token token;
 	if (match(parser, TAROT_TOK_FROM, &token)) {
 		node = tarot_create_node(NODE_Import, &token.position);
-		ImportStatement(node)->path = read_string(parser);
+		ImportStatement(node)->path = get_string(parser);
 		expect(parser, TAROT_TOK_IMPORT);
 		ImportStatement(node)->identifier = parse_relation(parser);
 		if (match(parser, TAROT_TOK_AS, NULL)) {

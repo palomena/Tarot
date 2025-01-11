@@ -101,4 +101,8 @@ extern uint8_t* tarot_bytecode_functions(struct tarot_bytecode_header *bytecode)
 extern uint8_t* tarot_bytecode_foreign_functions(struct tarot_bytecode_header *bytecode);
 extern uint8_t* tarot_bytecode_data(struct tarot_bytecode_header *bytecode);
 
+#ifdef TAROT_SOURCE
+extern const char* read_string(struct tarot_bytecode *bytecode, uint16_t offset);
+#endif /* TAROT_SOURCE */
+
 #endif /* TAROT_BYTECODE_H */

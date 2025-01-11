@@ -121,7 +121,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_Debug:
-			tarot_debug(&vm->bytecode->data[tarot_read16bit(ip, &ip)]);
+			tarot_debug(read_string(vm->bytecode, tarot_read16bit(ip, &ip)));
 			break;
 
 		case OP_Assert: {
@@ -133,6 +133,24 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			}
 			break;
 		}
+
+		case OP_PushTry:
+			push_try(thread, tarot_read16bit(ip, &ip));
+			break;
+
+		case OP_PopTry:
+			pop_try(thread);
+			break;
+
+		case OP_RaiseException:
+			/* Make seperate push before raise, so that we can reraise via stack */
+			z.Index = tarot_read16bit(ip, &ip); /* exception uid */
+			tarot_push(thread, z);
+			ip = vm->bytecode->instructions + current_try(thread);
+			/*handle_exception(thread);*/
+			/* if not found return and continue searching */
+			/* I think exceptions need to be on callstack for unwinding */
+			break;
 
 		/*
 		 * MARK: Memory OPs
@@ -795,7 +813,6 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_FreeList: {
-			enum tarot_datatype type = tarot_read16bit(ip, &ip);
 			tarot_free_list(var->List);
 			break;
 		}

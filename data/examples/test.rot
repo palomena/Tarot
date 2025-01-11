@@ -1,4 +1,3 @@
-/****
 function pain() {
 	if input("Enter Value:") == "loop" {
 		let i = 0;
@@ -8,13 +7,14 @@ function pain() {
 		}
 	} else {
 		print("Hello!");
+		raise Exception;
 	}
 }
-****/
 
 public function main() {
 	try {
 		let x = 20 + 30;
+		pain();
 	} catch {
 		println("Catched!");
 	}
