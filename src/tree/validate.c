@@ -153,14 +153,17 @@ static void mark_as_set(struct tarot_node *node) {
 			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
 			break;
 		case NODE_Variable:
-			Variable(node)->isset = true;
+			Variable(node)->is_set = true;
+			break;
+		case NODE_Attribute:
+			Attribute(node)->is_set = true;
 			break;
 	}
 }
 
 static bool validate_assign(struct tarot_node *node) {
 	struct tarot_node *root = definition_of(Assignment(node)->identifier);
-	if (kind_of(root) != NODE_Variable) {
+	if (kind_of(root) != NODE_Variable and kind_of(root) != NODE_Attribute) {
 		tarot_error_at(position_of(node), "Left operand of assignment statement cannot be written to!");
 		/* TODO: State a reason */
 		return false;
@@ -230,7 +233,7 @@ static bool validate_identifier(struct scope_stack *stack, struct tarot_node *no
 			tarot_end_error();
 			return false;
 		}
-		if (kind_of(link_of(node)) == NODE_Variable and not Variable(link_of(node))->isset) {
+		if (kind_of(link_of(node)) == NODE_Variable and not Variable(link_of(node))->is_set) {
 			tarot_begin_error(position_of(node));
 			print_text("Variable ");
 			print_name(name_of(node));

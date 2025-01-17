@@ -131,6 +131,7 @@ enum tarot_node_kind {
 	NODE_Namespace,
 	NODE_TypeDefinition,
 	NODE_Union,
+	NODE_Attribute,
 	NODE_Variable,
 	NODE_Constant,
 	NODE_Parameter,
@@ -1015,7 +1016,8 @@ struct Variable {
 	struct tarot_node *type;
 	struct tarot_node *value;
 	uint16_t index;
-	bool isset;
+	bool is_constant;
+	bool is_set;
 };
 
 /**
@@ -1023,24 +1025,15 @@ struct Variable {
  */
 extern struct Variable* Variable(struct tarot_node *node);
 
-/******************************************************************************
- * MARK: Constant
- *****************************************************************************/
+/**
+ *
+ */
+extern struct Variable* Attribute(struct tarot_node *node);
 
 /**
  *
  */
-struct Constant {
-	struct tarot_string *name;
-	struct tarot_node *type;
-	struct tarot_node *value;
-	uint16_t index;
-};
-
-/**
- *
- */
-extern struct Constant* Constant(struct tarot_node *node);
+extern struct Variable* Constant(struct tarot_node *node);
 
 /******************************************************************************
  * MARK: Parameter

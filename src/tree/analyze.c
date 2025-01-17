@@ -195,6 +195,7 @@ struct tarot_analyzer {
 	size_t function_index;
 	size_t foreign_function_index;
 	size_t variable_index;
+	size_t attribute_index;
 	bool has_main_function;
 	bool panic;
 };
@@ -219,6 +220,9 @@ static void index_node(
 			}
 			analyzer->variable_index = 0;
 			break;
+		case NODE_Class:
+			analyzer->attribute_index = 0;
+			break;
 		case NODE_Constructor:
 			ClassConstructor(node)->index = ++analyzer->function_index;
 			analyzer->variable_index = 0;
@@ -228,6 +232,9 @@ static void index_node(
 			break;
 		case NODE_Variable:
 			Variable(node)->index = analyzer->variable_index++;
+			break;
+		case NODE_Attribute:
+			Attribute(node)->index = analyzer->attribute_index++;
 			break;
 		case NODE_Constant:
 			Constant(node)->index = analyzer->variable_index++;

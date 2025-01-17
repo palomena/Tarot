@@ -1047,13 +1047,13 @@ static struct tarot_node* parse_attribute(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;
 	if (match(parser, TAROT_TOK_IDENTIFIER, &token)) {
-		node = tarot_create_node(NODE_Variable, &token.position);
-		Variable(node)->name = token.value.String;
+		node = tarot_create_node(NODE_Attribute, &token.position);
+		Attribute(node)->name = token.value.String;
 		if (match(parser, TAROT_TOK_COLON, &token)) {
-			Variable(node)->type = parse_datatype(parser);
+			Attribute(node)->type = parse_datatype(parser);
 		}
 		if (match(parser, TAROT_TOK_ASSIGN, &token)) {
-			Variable(node)->value = parse_expression(parser);
+			Attribute(node)->value = parse_expression(parser);
 		}
 		expect(parser, TAROT_TOK_SEMICOLON);
 	}

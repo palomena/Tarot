@@ -51,7 +51,6 @@ struct tarot_node {
 		struct TypeDefinition TypeDefinition;
 		struct UnionDefinition UnionDefinition;
 		struct Variable Variable;
-		struct Constant Constant;
 		struct Parameter Parameter;
 		struct Builtin Builtin;
 		struct Break Break;
@@ -187,6 +186,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_TypeDefinition:
 		case NODE_Union:
 		case NODE_Variable:
+		case NODE_Attribute:
 		case NODE_Constant:
 		case NODE_Parameter:
 		case NODE_Builtin:
@@ -245,6 +245,7 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Namespace",
 		"TypeDefinition",
 		"Union",
+		"Attribute",
 		"Variable",
 		"Constant",
 		"Parameter",
@@ -567,9 +568,14 @@ struct Variable* Variable(struct tarot_node *node) {
 	return &node->as.Variable;
 }
 
-struct Constant* Constant(struct tarot_node *node) {
+struct Variable* Attribute(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Attribute);
+	return &node->as.Variable;
+}
+
+struct Variable* Constant(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Constant);
-	return &node->as.Constant;
+	return &node->as.Variable;
 }
 
 struct Parameter* Parameter(struct tarot_node *node) {
@@ -645,6 +651,8 @@ uint16_t index_of(struct tarot_node *node) {
 			return Enumerator(node)->index;
 		case NODE_Variable:
 			return Variable(node)->index;
+		case NODE_Attribute:
+			return Attribute(node)->index;
 		case NODE_Constant:
 			return Constant(node)->index;
 		case NODE_Parameter:
@@ -734,6 +742,8 @@ struct tarot_string* name_of(struct tarot_node *node) {
 			return UnionDefinition(node)->name;
 		case NODE_Variable:
 			return Variable(node)->name;
+		case NODE_Attribute:
+			return Attribute(node)->name;
 		case NODE_Constant:
 			return Constant(node)->name;
 		case NODE_Parameter:
@@ -895,6 +905,8 @@ struct tarot_node* type_of(struct tarot_node *node) {
 			return volatile_type(node);
 		case NODE_Variable:
 			return type_of(Variable(node)->type);
+		case NODE_Attribute:
+			return type_of(Attribute(node)->type);
 		case NODE_Constant:
 			return type_of(Constant(node)->type);
 		case NODE_Parameter:
@@ -1172,6 +1184,11 @@ struct tarot_node* tarot_copy_node(struct tarot_node *original) {
 			Variable(node)->type = tarot_copy_node(Variable(original)->type);
 			Variable(node)->value = tarot_copy_node(Variable(original)->value);
 			break;
+		case NODE_Attribute:
+			Attribute(node)->name = tarot_copy_string(Attribute(original)->name);
+			Attribute(node)->type = tarot_copy_node(Attribute(original)->type);
+			Attribute(node)->value = tarot_copy_node(Attribute(original)->value);
+			break;
 		case NODE_Constant:
 			Constant(node)->name = tarot_copy_string(Constant(original)->name);
 			Constant(node)->type = tarot_copy_node(Constant(original)->type);
@@ -1281,6 +1298,9 @@ static void free_node(
 			break;
 		case NODE_Variable:
 			tarot_free_string(Variable(node)->name);
+			break;
+		case NODE_Attribute:
+			tarot_free_string(Attribute(node)->name);
 			break;
 		case NODE_Constant:
 			tarot_free_string(Constant(node)->name);
@@ -1493,6 +1513,10 @@ static void traverse_node(
 			traverse_node(&Variable(node)->type, state);
 			traverse_node(&Variable(node)->value, state);
 			break;
+		case NODE_Attribute:
+			traverse_node(&Attribute(node)->type, state);
+			traverse_node(&Attribute(node)->value, state);
+			break;
 		case NODE_Constant:
 			traverse_node(&Constant(node)->type, state);
 			traverse_node(&Constant(node)->value, state);
@@ -1612,6 +1636,7 @@ static void print_node(
 		case NODE_Enum:
 		case NODE_Function:
 		case NODE_Variable:
+		case NODE_Attribute:
 		case NODE_Parameter:
 		case NODE_Constant:
 			tarot_fputs(stream, "name:");

@@ -1477,7 +1477,7 @@ static uint8_t count_attributes(struct tarot_node *node) {
 	struct tarot_node *attributes = ClassDefinition(link_of(node))->block;
 	for (i = 0; i < Block(attributes)->num_elements; i++) {
 		struct tarot_node *attribute = Block(attributes)->elements[i];
-		if (kind_of(attribute) == NODE_Variable) {
+		if (kind_of(attribute) == NODE_Attribute) {
 			result++;
 		}
 	}
@@ -1649,6 +1649,8 @@ static void generate_for(
 	write_argument(generator, Variable(ForLoop(node)->identifier)->index);
 	generate(generator, RangeExpression(ForLoop(node)->expression)->stepsize);
 	write_instruction(generator, OP_IntegerAddition);
+	write_instruction(generator, OP_LoadVariablePointer);
+	write_argument(generator, Variable(ForLoop(node)->identifier)->index);
 	write_instruction(generator, OP_StoreInteger);
 	write_instruction(generator, OP_PopRegion);
 	write_instruction(generator, OP_PopRegion);
@@ -2053,6 +2055,8 @@ static void generate(struct tarot_generator *generator, struct tarot_node *node)
 			break;
 		case NODE_Breakpoint:
 			generate_breakpoint(generator, node);
+			break;
+		case NODE_Attribute:
 			break;
 	}
 }
