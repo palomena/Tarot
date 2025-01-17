@@ -17,30 +17,22 @@ class Woah {
 
 function main() {
 	let x =	Woah();
+	__breakpoint__;
 	for i in range(10) {
 		println(x.test.name);
 	}
 }
 
-# class destructor on variable
-
 # finish up "for i in range" loop implementation + for obj in x {}
 # clean dict implementation
-# class instances
 # try catch
-# hot reload
 # thread spawn + context switch
 # class constructor check all attrs init
-
 # OP_READ, OP_WRITE, OP_LOAD [var, listoffset, dictoffset, objoffset]#
 # doesnt rly work for ident in arithmetics!
 # generator.write/read bool
-# how 2 do self.obj.x? -> load obj, load attr, load attr
 # fuse paranms and vars opcode
-# destructor!
-# -> how to via region?
-# catch uninitialized in construct
-# breakpoint
+# catch uninitialized in constructor
 # need node attribute, cuz its generating vars in generate, or skip attrs in block?
 # dict types
 # refactor all

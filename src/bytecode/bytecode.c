@@ -1898,6 +1898,13 @@ static void generate_break(
 	write_argument(generator, WhileLoop(loop)->end);
 }
 
+static void generate_breakpoint(
+	struct tarot_generator *generator,
+	struct tarot_node *node
+) {
+	write_instruction(generator, OP_Break);
+}
+
 static void generate(struct tarot_generator *generator, struct tarot_node *node) {
 	switch (kind_of(node)) {
 		default:
@@ -2043,6 +2050,9 @@ static void generate(struct tarot_generator *generator, struct tarot_node *node)
 			break;
 		case NODE_Break:
 			generate_break(generator, node);
+			break;
+		case NODE_Breakpoint:
+			generate_breakpoint(generator, node);
 			break;
 	}
 }

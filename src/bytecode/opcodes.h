@@ -32,6 +32,12 @@ enum tarot_opcode {
 	OP_Assert,
 
 	/**
+	 * Triggers a breakpoint. This is a debug operation, it does not break
+	 * a loop or anything like that!
+	 */
+	OP_Break,
+
+	/**
 	 * OP_PushTry [instruction_address]
 	 */
 	OP_PushTry,

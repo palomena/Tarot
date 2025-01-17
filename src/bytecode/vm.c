@@ -135,6 +135,11 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 		}
 
+		case OP_Break:
+			tarot_debug("Breakpoint Triggered!");
+			tarot_fgetc(tarot_stdin);
+			break;
+
 		case OP_PushTry:
 			push_try(thread, tarot_read16bit(ip, &ip));
 			break;

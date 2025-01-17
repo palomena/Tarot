@@ -8,6 +8,7 @@ const char* opcode_string(enum tarot_opcode opcode) {
 		"Halt",
 		"Debug",
 		"Assert",
+		"Break",
 		"PushTry",
 		"PopTry",
 		"RaiseException",

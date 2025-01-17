@@ -1471,6 +1471,19 @@ static struct tarot_node* parse_break(struct tarot_parser *parser) {
 		node = tarot_create_node(NODE_Break, &token.position);
 		Break(node)->loop = parser->scopes.loop;
 		expect(parser, TAROT_TOK_SEMICOLON);
+		if (parser->scopes.loop == NULL) {
+			tarot_error_at(&token.position, "Using break outside of a loop!");
+		}
+	}
+	return result(parser, node);
+}
+
+static struct tarot_node* parse_breakpoint(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match(parser, TAROT_TOK_BREAKPOINT, &token)) {
+		node = tarot_create_node(NODE_Breakpoint, &token.position);
+		expect(parser, TAROT_TOK_SEMICOLON);
 	}
 	return result(parser, node);
 }
@@ -1485,6 +1498,7 @@ static struct tarot_node* parse_statement(struct tarot_parser *parser) {
 	(node = parse_while(parser))      or
 	(node = parse_for(parser))        or
 	(node = parse_break(parser))      or
+	(node = parse_breakpoint(parser)) or
 	(node = parse_match(parser))      or
 	(node = parse_try(parser))        or
 	(node = parse_print(parser))      or

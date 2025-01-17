@@ -135,7 +135,8 @@ enum tarot_node_kind {
 	NODE_Constant,
 	NODE_Parameter,
 	NODE_Builtin,
-	NODE_Break
+	NODE_Break,
+	NODE_Breakpoint
 };
 
 /**
@@ -1093,6 +1094,15 @@ struct Break {
  *
  */
 extern struct Break* Break(struct tarot_node *node);
+
+/******************************************************************************
+ * MARK: Breakpoint
+ *****************************************************************************/
+
+/**
+ *
+ */
+extern struct UnaryExpression* Breakpoint(struct tarot_node *node);
 
 /******************************************************************************
  * MARK: Node

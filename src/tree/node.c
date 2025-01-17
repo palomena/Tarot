@@ -175,6 +175,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_Raise:
 		case NODE_Assert:
 		case NODE_Break:
+		case NODE_Breakpoint:
 			return CLASS_STATEMENT;
 		case NODE_Module:
 		case NODE_Class:
@@ -248,7 +249,8 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Constant",
 		"Parameter",
 		"Builtin",
-		"Break"
+		"Break",
+		"Breakpoint"
 	};
 	if (kind >= 0 and kind < lengthof(names)) {
 		return names[kind];
@@ -583,6 +585,11 @@ struct Builtin* Builtin(struct tarot_node *node) {
 struct Break* Break(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Break);
 	return &node->as.Break;
+}
+
+struct UnaryExpression* Breakpoint(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Breakpoint);
+	return &node->as.UnaryExpression;
 }
 
 /******************************************************************************
