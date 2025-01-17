@@ -1,23 +1,48 @@
-function boo() -> List[Integer] {
-	let x =  [1,2,3,4,5,6,7];
-	x.append(10/2);
-	return x;
+class Test {
+	name: String;
+
+	__init__() {
+		self.name = "Max Mustermann";
+	}
 }
+
+class Woah {
+	test: Test;
+
+	__init__() {
+		self.test = Test();
+	}
+}
+
 
 function main() {
-	let sum = Integer(0);
-	let i   = Integer(0);
-	let list = boo();
-	while i < list.length {
-		sum += list[i];
-		i += 1;
+	let x =	Woah();
+	for i in range(10) {
+		println(x.test.name);
 	}
-	println(f"Sum: {abs(sum)}");
 }
 
-########################################
-# TODO:
-# export foo as foo;
-# reduce number of allocations
-# exceptions
-# for element in list {} # how to get index too?
+# class destructor on variable
+
+# finish up "for i in range" loop implementation + for obj in x {}
+# clean dict implementation
+# class instances
+# try catch
+# hot reload
+# thread spawn + context switch
+# class constructor check all attrs init
+
+# OP_READ, OP_WRITE, OP_LOAD [var, listoffset, dictoffset, objoffset]#
+# doesnt rly work for ident in arithmetics!
+# generator.write/read bool
+# how 2 do self.obj.x? -> load obj, load attr, load attr
+# fuse paranms and vars opcode
+# destructor!
+# -> how to via region?
+# catch uninitialized in construct
+# breakpoint
+# need node attribute, cuz its generating vars in generate, or skip attrs in block?
+# dict types
+# refactor all
+# short
+# method calls

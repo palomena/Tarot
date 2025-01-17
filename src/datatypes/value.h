@@ -7,6 +7,7 @@
 struct tarot_dictionary;
 struct tarot_list;
 struct tarot_string;
+struct tarot_object;
 
 union tarot_value {
 	bool                     Boolean;
@@ -18,6 +19,7 @@ union tarot_value {
 	struct tarot_list       *Dict;
 	struct tarot_list       *List;
 	struct tarot_string     *String;
+	struct tarot_object     *Object;
 	union tarot_value       *Value;
 };
 

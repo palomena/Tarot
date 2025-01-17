@@ -11,6 +11,7 @@ struct tarot_string {
 static struct tarot_string* tarot_allocate_string(size_t capacity) {
 	struct tarot_string *string = tarot_malloc(sizeof(*string) + capacity);
 	string->capacity = capacity;
+	tarot_tag(string, TYPE_STRING);
 	return string;
 }
 

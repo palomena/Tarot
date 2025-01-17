@@ -591,6 +591,25 @@ static struct tarot_node* parse_sqrt_expression(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
+static struct tarot_node* parse_range_expression(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match_identifier(parser, "range", &token)) {
+		node = tarot_create_node(NODE_Range, &token.position);
+		tarot_clear_token(&token);
+		expect(parser, TAROT_TOK_OPEN_BRACKET);
+		RangeExpression(node)->end = parse_expression(parser);
+		RangeExpression(node)->start = create_literal(position_of(node), VALUE_INTEGER);
+		RangeExpression(node)->stepsize = create_literal(position_of(node), VALUE_INTEGER);
+		Literal(RangeExpression(node)->start)->type = TYPE_INTEGER;
+		Literal(RangeExpression(node)->stepsize)->type = TYPE_INTEGER;
+		Literal(RangeExpression(node)->start)->value.Integer = tarot_create_integer_from_short(1);
+		Literal(RangeExpression(node)->stepsize)->value.Integer = tarot_create_integer_from_short(1);
+		expect(parser, TAROT_TOK_CLOSE_BRACKET);
+	}
+	return result(parser, node);
+}
+
 static struct tarot_node* parse_input(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;
@@ -716,6 +735,7 @@ static struct tarot_node* parse_unary_expression(struct tarot_parser *parser) {
 	(node = parse_not_expression(parser)) or
 	(node = parse_neg_expression(parser)) or
 	(node = parse_abs_expression(parser)) or
+	(node = parse_range_expression(parser)) or
 	(node = parse_typecast(parser)) or
 	(node = parse_input(parser)) or
 	(node = parse_value_expression(parser)) or
@@ -972,6 +992,25 @@ static struct tarot_node* parse_function(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
+static struct tarot_node* parse_constructor(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match(parser, TAROT_TOK_INIT, &token)) {
+		node = tarot_create_node(NODE_Constructor, &token.position);
+		ClassConstructor(node)->link = parser->scopes.class;
+		add_to_current_scope(parser, node);
+		ClassConstructor(node)->scope = create_scope();
+		enter_node(&parser->scopes, node);
+		expect(parser, TAROT_TOK_OPEN_BRACKET);
+		ClassConstructor(node)->parameters = parse_comma_seperated(parser, parse_parameter);
+		index_parameters(ClassConstructor(node)->parameters);
+		expect(parser, TAROT_TOK_CLOSE_BRACKET);
+		ClassConstructor(node)->block = parse_scoped_block(parser, parse_statement);
+		leave_node(&parser->scopes, node);
+	}
+	return result(parser, node);
+}
+
 static struct tarot_node* parse_foreign_parameter(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;
@@ -1024,9 +1063,10 @@ static struct tarot_node* parse_attribute(struct tarot_parser *parser) {
 static struct tarot_node* parse_import(struct tarot_parser *parser);
 static struct tarot_node* parse_member(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
-	(node = parse_definition(parser)) or
-	(node = parse_constant(parser))   or
-	(node = parse_import(parser))     or
+	(node = parse_constructor(parser)) or
+	(node = parse_definition(parser))  or
+	(node = parse_constant(parser))    or
+	(node = parse_import(parser))      or
 	(node = parse_attribute(parser));
 	return result(parser, node);
 }
@@ -1042,9 +1082,9 @@ static struct tarot_node* parse_class(struct tarot_parser *parser) {
 			expect(parser, TAROT_TOK_CLOSE_BRACKET);
 		}
 		ClassDefinition(node)->scope = create_scope();
-		enter_scope(&parser->scopes, &ClassDefinition(node)->scope);
+		enter_node(&parser->scopes, node);
 		ClassDefinition(node)->block = parse_scoped_block(parser, parse_member);
-		leave_scope(&parser->scopes, ClassDefinition(node)->scope);
+		leave_node(&parser->scopes, node);
 	}
 	return result(parser, node);
 }
@@ -1245,6 +1285,33 @@ static struct tarot_node* parse_while(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
+static struct tarot_node* parse_for(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match(parser, TAROT_TOK_FOR, &token)) {
+		struct tarot_node *value = NULL;
+		node = tarot_create_node(NODE_For, &token.position);
+		/* or make new node kind NODE_Iterator with reference to the expression
+		 * because we cannot determine type of iterator at parse stage
+		 */
+		ForLoop(node)->identifier = tarot_create_node(NODE_Variable, position_of(node));
+		Variable(ForLoop(node)->identifier)->name = read_identifier(parser);
+		Variable(ForLoop(node)->identifier)->type = tarot_create_node(NODE_Type, position_of(node));
+		Type(Variable(ForLoop(node)->identifier)->type)->type = TYPE_INTEGER;
+		add_to_current_scope(parser, ForLoop(node)->identifier);
+		value = create_literal(position_of(node), VALUE_INTEGER);
+		Literal(value)->type = TYPE_INTEGER;
+		Literal(value)->value.Integer = tarot_create_integer_from_short(0);
+		Variable(ForLoop(node)->identifier)->value = value;
+		expect(parser, TAROT_TOK_IN);
+		ForLoop(node)->expression = parse_expression(parser);
+		parser->scopes.loop = node;
+		ForLoop(node)->block = parse_scoped_block(parser, parse_statement);
+		parser->scopes.loop = NULL; /* FIXME: Fucks with nested loops and break */
+	}
+	return result(parser, node);
+}
+
 static struct tarot_node* parse_case(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_node *condition = parse_expression(parser);
@@ -1416,6 +1483,7 @@ static struct tarot_node* parse_statement(struct tarot_parser *parser) {
 	(node = parse_return(parser))     or
 	(node = parse_if(parser))         or
 	(node = parse_while(parser))      or
+	(node = parse_for(parser))        or
 	(node = parse_break(parser))      or
 	(node = parse_match(parser))      or
 	(node = parse_try(parser))        or

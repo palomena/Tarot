@@ -22,7 +22,8 @@ extern void tarot_setup_function(
 	uint16_t address,
 	uint8_t num_parameters,
 	uint8_t num_variables,
-	bool returns_value
+	bool returns_value,
+	bool is_method
 );
 
 extern size_t tarot_num_parameters(struct tarot_function *function);
@@ -30,6 +31,8 @@ extern size_t tarot_num_parameters(struct tarot_function *function);
 extern size_t tarot_num_variables(struct tarot_function *function);
 
 extern bool tarot_returns(struct tarot_function *function);
+
+extern bool tarot_is_method(struct tarot_function *function);
 
 /******************************************************************************
  * MARK: Bytecode

@@ -93,6 +93,7 @@ enum tarot_node_kind {
 	NODE_Not,
 	NODE_Neg,
 	NODE_Abs,
+	NODE_Range,
 	NODE_FunctionCall,
 	NODE_Relation,
 	NODE_Subscript,
@@ -110,6 +111,7 @@ enum tarot_node_kind {
 	NODE_Import,
 	NODE_If,
 	NODE_While,
+	NODE_For,
 	NODE_Match,
 	NODE_Case,
 	NODE_Assignment,
@@ -123,6 +125,7 @@ enum tarot_node_kind {
 	NODE_Assert,
 	NODE_Class,
 	NODE_Enum,
+	NODE_Constructor,
 	NODE_Function,
 	NODE_ForeignFunction,
 	NODE_Namespace,
@@ -329,6 +332,24 @@ extern struct UnaryExpression* NegExpression(struct tarot_node *node);
  *
  */
 extern struct UnaryExpression* AbsExpression(struct tarot_node *node);
+
+/******************************************************************************
+ * MARK: Range
+ *****************************************************************************/
+
+/**
+ *
+ */
+struct RangeExpression {
+	struct tarot_node* start;
+	struct tarot_node* end;
+	struct tarot_node* stepsize;
+};
+
+/**
+ *
+ */
+extern struct RangeExpression* RangeExpression(struct tarot_node *node);
 
 /******************************************************************************
  * MARK: FunctionCall
@@ -615,6 +636,26 @@ struct WhileLoop {
 extern struct WhileLoop* WhileLoop(struct tarot_node *node);
 
 /******************************************************************************
+ * MARK: For Loop
+ *****************************************************************************/
+
+/**
+ *
+ */
+struct ForLoop {
+	struct tarot_node *identifier;
+	struct tarot_node *expression;
+	struct tarot_node *block;
+	size_t start;
+	size_t end;
+};
+
+/**
+ *
+ */
+extern struct ForLoop* ForLoop(struct tarot_node *node);
+
+/******************************************************************************
  * MARK: Match
  *****************************************************************************/
 
@@ -841,6 +882,28 @@ struct EnumDefinition {
  *
  */
 extern struct EnumDefinition* EnumDefinition(struct tarot_node *node);
+
+/******************************************************************************
+ * MARK: Constructor
+ *****************************************************************************/
+
+/**
+ *
+ */
+struct ClassConstructor {
+	struct tarot_node *parameters;
+	struct tarot_node *return_value;
+	struct tarot_node *block;
+	struct tarot_node *link;
+	struct tarot_list *scope;
+	uint16_t index;
+};
+
+/**
+ *
+ */
+extern struct ClassConstructor* ClassConstructor(struct tarot_node *node);
+
 
 /******************************************************************************
  * MARK: Function
@@ -1076,6 +1139,8 @@ extern struct tarot_node* definition_of(struct tarot_node *node);
  * Returns the type of the node (castable to struct Type).
  */
 extern struct tarot_node* type_of(struct tarot_node *node);
+
+extern struct tarot_list* scope_of(struct tarot_node *node);
 
 /**
  * Creates a new node of the specified node kind.

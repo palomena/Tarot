@@ -80,6 +80,10 @@ union tarot_value* tarot_variable(struct tarot_thread *thread, uint8_t index) {
 	return &thread->stack.base[thread->stack.baseptr - index - 1];
 }
 
+union tarot_value* tarot_self(struct tarot_thread *thread) {
+	return &current_frame(thread)->self;
+}
+
 /* frame: [arguments] [baseptr|ptr] [space for variables] */
 /* in call: [arguments] [space for variables] [baseptr|ptr] */
 /* return: [baseptr|ptr] [arguments] [space for variables] */

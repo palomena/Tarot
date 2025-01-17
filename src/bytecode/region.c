@@ -48,6 +48,9 @@ void tarot_pop_region(struct tarot_thread *thread) {
 			case TYPE_DICT:
 				tarot_free_dictionary(ptr);
 				break;
+			case TYPE_CUSTOM:
+				tarot_free_object(ptr);
+				break;
 		}
 	}
 	if (current_frame(thread)->scope.index == 1) {
@@ -76,3 +79,4 @@ void tarot_clear_regions(struct tarot_thread *thread) {
 bool tarot_is_tracked(struct tarot_thread *thread, void *ptr) {
 	return tarot_list_contains(*current_region(thread), &ptr);
 }
+

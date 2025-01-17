@@ -26,14 +26,4 @@ extern void tarot_clear_regions(struct tarot_thread *thread);
 
 extern bool tarot_is_tracked(struct tarot_thread *thread, void *ptr);
 
-/**
- * Allocates an object within the current region.
- */
-extern union tarot_value* tarot_create_object(enum tarot_datatype type);
-
-/**
- * Frees an allocated object.
- */
-extern void tarot_free_object(union tarot_value *object);
-
 #endif /* TAROT_REGION_H */

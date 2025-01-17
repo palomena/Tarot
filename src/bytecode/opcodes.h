@@ -7,10 +7,33 @@
 #include "defines.h"
 
 enum tarot_opcode {
+
+	/**
+	 * Does nothing for one cycle.
+	 */
 	OP_NoOperation,
+
+	/**
+	 * Terminates the program.
+	 */
 	OP_Halt,
+
+	/**
+	 * OP_Debug [data_address:string]
+	 * If in debug mode, the string argument is printed to stdout.
+	 */
 	OP_Debug,
+
+	/**
+	 * OP_Assert [data_address:string]
+	 * Pops a boolean value off the stack. If that value evaluates
+	 * to false, the string argument is used for raising an exception.
+	 */
 	OP_Assert,
+
+	/**
+	 * OP_PushTry [instruction_address]
+	 */
 	OP_PushTry,
 	OP_PopTry,
 	OP_RaiseException,
@@ -23,6 +46,12 @@ enum tarot_opcode {
 	OP_PushRegion,
 	OP_PopRegion,
 	OP_LoadValue,
+
+	/**
+	 * Pops two values off the stack. Stores the value inside
+	 * the variable.
+	 * Stack: [TOP > variable > value > ...]
+	 */
 	OP_StoreValue,
 	OP_CopyValue,
 	OP_PopValue,
@@ -32,6 +61,13 @@ enum tarot_opcode {
 	OP_LoadDictIndex,
 	OP_Track,
 	OP_UnTrack,
+	OP_Read,
+	/* MARK: Objects */
+	OP_NewObject,
+	OP_DeleteObject,
+	OP_LoadAttribute,
+	OP_Self,
+	OP_CopyObject,
 	/* MARK: Logical */
 	OP_PushTrue,
 	OP_PushFalse,

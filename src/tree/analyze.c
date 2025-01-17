@@ -117,6 +117,9 @@ void link_nodeptr(
 		case NODE_Relation:
 			resolve_relation(node);
 			break;
+		case NODE_Constructor:
+			ClassConstructor(node)->link = stack->class;
+			break;
 	}
 }
 
@@ -214,6 +217,10 @@ static void index_node(
 			} else {
 				FunctionDefinition(node)->index = ++analyzer->function_index;
 			}
+			analyzer->variable_index = 0;
+			break;
+		case NODE_Constructor:
+			ClassConstructor(node)->index = ++analyzer->function_index;
 			analyzer->variable_index = 0;
 			break;
 		case NODE_ForeignFunction:

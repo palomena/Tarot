@@ -108,6 +108,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		switch (opcode) {
 			union tarot_value a, b, z, *var;
+			struct tarot_object *cls;
 			enum tarot_datatype type;
 			size_t i, length;
 			bool state;
@@ -165,7 +166,9 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_StoreValue:
-			*var = tarot_pop(thread);
+			b = tarot_pop(thread);
+			z = tarot_pop(thread);
+			*b.Value = z;
 			break;
 
 		/* TODO: */
@@ -175,9 +178,11 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		/* Could introduce a "transfer ownership" opcode that releases topstack from region */
 
 		case OP_StoreInteger:
+			b = tarot_pop(thread);
 			z = tarot_pop(thread);
 			tarot_remove_from_region(thread, z.Integer);
-			tarot_free_integer(var->Integer);
+			tarot_free_integer(b.Value->Integer);
+			*b.Value = z;
 			*var = z;
 			break;
 
@@ -189,16 +194,22 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_StoreString:
+			b = tarot_pop(thread);
 			z = tarot_pop(thread);
+			printf("remove %p to region\n", b.Pointer);
+			printf("remove %p to region\n", z.String);
 			tarot_remove_from_region(thread, z.String);
-			tarot_free_string(var->String);
+			tarot_free_string(b.Value->String);
+			*b.Value = z;
 			*var = z;
 			break;
 
 		case OP_StoreList:
+			b = tarot_pop(thread);
 			z = tarot_pop(thread);
 			tarot_remove_from_region(thread, z.List);
 			tarot_free_list(var->List);
+			*b.Value = z;
 			*var = z;
 			break;
 
@@ -211,7 +222,8 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_LoadVariablePointer:
-			var = tarot_variable(thread, tarot_read8bit(ip, &ip));
+			z.Value = tarot_variable(thread, tarot_read8bit(ip, &ip));
+			tarot_push(thread, z);
 			break;
 
 		case OP_LoadListIndex:
@@ -232,6 +244,44 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 
 		case OP_UnTrack:
 			tarot_remove_from_region(thread, tarot_top(thread).Pointer);
+			break;
+
+		/*
+		 * MARK: Objects
+		 */
+
+		case OP_NewObject:
+			i = tarot_read16bit(ip, &ip); /* number of attrs */
+			z.Object = tarot_create_object(i);
+			tarot_push(thread, z);
+			/*tarot_add_to_region(thread, z.Object);*/
+			*tarot_self(thread) = z;
+			printf("new %p\n", tarot_self(thread)->Object);
+			var = &z;
+			cls = z.Object;
+			break;
+
+		case OP_DeleteObject:
+			z = tarot_pop(thread);
+			tarot_free_object(z.Object);
+			break;
+
+		case OP_LoadAttribute:
+			i = tarot_read8bit(ip, &ip);
+			z = tarot_pop(thread);
+			printf("%p\n", z.Object);
+			a.Value = tarot_object_attribute(z.Object, i);
+			var = a.Value;
+			tarot_push(thread, a);
+			break;
+
+		case OP_Read:
+			tarot_push(thread, *tarot_pop(thread).Value);
+			break;
+
+		case OP_Self:
+			printf("%p\n", tarot_self(thread)->Object);
+			tarot_push(thread, *tarot_self(thread));
 			break;
 
 		/*
@@ -263,6 +313,9 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					break;
 				case TYPE_LIST:
 					tarot_add_to_region(thread, z.List);
+					break;
+				case TYPE_CUSTOM:
+					tarot_add_to_region(thread, z.Object);
 					break;
 				case TYPE_DICT:
 					z.Dict = tarot_copy_dict(tarot_pop(thread).Dict);
@@ -727,6 +780,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_CopyString:
 			z.String = tarot_copy_string(tarot_pop(thread).String);
 			tarot_add_to_region(thread, z.String);
+			printf("add %p to region\n", z.String);
 			tarot_push(thread, z);
 			break;
 
@@ -760,6 +814,14 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					break;
 				case TYPE_STRING:
 					break;
+				case TYPE_LIST: {
+					z.String = tarot_create_string("");
+					struct tarot_iostream *stream = tarot_fstropen(&z.String, TAROT_OUTPUT);
+					tarot_print_list(stream, tarot_pop(thread).List);
+					tarot_add_to_region(thread, z.String);
+					tarot_push(thread, z);
+					break;
+				}
 			}
 			break;
 

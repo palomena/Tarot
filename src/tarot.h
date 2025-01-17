@@ -3,6 +3,7 @@
 
 #include "bytecode/bytecode.h"
 #include "bytecode/thread.h"
+#include "bytecode/region.h"
 #include "bytecode/vm.h"
 
 #include "datatypes/dictionary.h"
@@ -10,6 +11,7 @@
 #include "datatypes/list.h"
 #include "datatypes/rational.h"
 #include "datatypes/string.h"
+#include "datatypes/object.h"
 #include "datatypes/value.h"
 
 #if defined __STDC_HOSTED__ && __STDC_HOSTED__
@@ -39,7 +41,6 @@
 #include "system/logging.h"
 #include "system/malloc.h"
 #include "system/platform.h"
-#include "system/region.h"
 #include "system/string.h"
 
 #include "tree/tree.h"

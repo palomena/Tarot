@@ -6,6 +6,7 @@
 /* Forward declaration */
 struct tarot_thread;
 union tarot_value;
+#include "datatypes/value.h"
 
 /**
  * Pushes the value to the top of the thread's stack.
@@ -31,6 +32,8 @@ extern union tarot_value tarot_argument(struct tarot_thread *thread, uint8_t ind
  * Provides access to the variable at the specfied index.
  */
 extern union tarot_value* tarot_variable(struct tarot_thread *thread, uint8_t index);
+
+extern union tarot_value* tarot_self(struct tarot_thread *thread);
 
 /**
  *
@@ -62,6 +65,7 @@ struct tarot_scope {
 struct stackframe {
 	void *return_address;
 	struct tarot_function *function;
+	union tarot_value self;
 	struct tarot_scope scope;
 	size_t baseptr;
 	size_t ptr;

@@ -109,9 +109,9 @@ static bool validate_functioncall(struct tarot_node *node) {
 	} else if (kind_of(function) == NODE_ForeignFunction) {
 		parameters = ForeignFunction(function)->parameters;
 	} else if (kind_of(function) == NODE_Class) {
-		function = lookup_symbol_in_scope(ClassDefinition(function)->scope, tarot_const_string("__init__"));
+		function = lookup_symbol_in_scope(ClassDefinition(function)->scope, ClassDefinition(function)->name);
 		if (function != NULL) {
-			parameters = FunctionDefinition(function)->parameters;
+			parameters = ClassConstructor(function)->parameters;
 		} else {
 			tarot_error_at(position_of(node), "No constructor found");
 			return false;
@@ -739,6 +739,10 @@ static bool validate_variable(struct tarot_node *node) {
 	if (Variable(node)->value == NULL) {
 		return true;
 	}
+	if (kind_of(Variable(node)->value) == NODE_List and List(Variable(node)->value)->num_elements == 0) {
+		 /* handles empty list | TODO: Move to analyze, validate shouldn't mutate stuff! */
+		/* FIXME: List requires */
+	} else
 	if (not compare_types(Variable(node)->type, type_of(Variable(node)->value))) {
 		raise_type_error(position_of(node), Variable(node)->type, type_of(Variable(node)->value));
 		return false;
@@ -792,7 +796,7 @@ static bool validate_parameter(struct tarot_node *node) {
 static bool validate_class(struct tarot_node *node) {
 	struct tarot_node *constructor = lookup_symbol_in_scope(
 		ClassDefinition(node)->scope,
-		tarot_const_string("__init__")
+		ClassDefinition(node)->name
 	);
 	if (constructor == NULL) {
 		tarot_begin_error(position_of(node));
@@ -802,22 +806,22 @@ static bool validate_class(struct tarot_node *node) {
 		tarot_end_error();
 		return false;
 	}
-	if (FunctionDefinition(constructor)->return_value != NULL) {
+	/*if (ClassConstructor(constructor)->return_value != NULL) {
 		tarot_begin_error(position_of(node));
 		print_text("Constructor of class ");
 		print_name(name_of(node));
 		print_text(" returns a value!");
 		tarot_end_error();
 		return false;
-	}
-	if (FunctionDefinition(constructor)->visibility == VISIBILITY_PRIVATE) {
+	}*/
+	/*if (FunctionDefinition(constructor)->visibility == VISIBILITY_PRIVATE) {
 		tarot_begin_error(position_of(node));
 		print_text("Constructor of class ");
 		print_name(name_of(node));
 		print_text(" is private!");
 		tarot_end_error();
 		return false;
-	}
+	}*/
 	/* TODO: Compare whether the assignments in constructor block set all class member variables (assert no members are left uninitialized) */
 	return true;
 }

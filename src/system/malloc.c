@@ -43,10 +43,15 @@ void tarot_tag(void *ptr, int type) {
 	header_of(ptr)->type = type;
 }
 
+static size_t even(size_t n) {
+	return n + (n % 2);
+}
+
 void* tarot_malloc(size_t size) {
 	void *ptr = NULL;
 	struct block_header *header;
 	if (size > 0) {
+		size = even(size);
 		header = tarot_platform.malloc(sizeof(*header) + size);
 		assert(header != NULL);
 		header->size = size;
@@ -70,6 +75,7 @@ void* tarot_realloc(void *ptr, size_t size) {
 		struct block_header *old_header = header_of(ptr);
 		size_t old_size = old_header->size;
 		allocated_memory -= old_size;
+		size = even(size);
 		header = tarot_platform.realloc(old_header, size + sizeof(*header));
 		header->size = size;
 		new_ptr = end_of_struct(header);

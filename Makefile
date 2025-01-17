@@ -68,3 +68,17 @@ ${BUILD_DIRECTORY}/math/%.c.o: ${SOURCE_DIRECTORY}/math/%.c
 .PHONY: clean
 clean:
 	rm -rv ${BUILD_DIRECTORY}
+
+.PHONY: strip
+strip:
+#	objcopy --only-keep-debug ${EXECUTABLE} ${EXECUTABLE}.debug
+#	objcopy --strip-debug ${EXECUTABLE}
+	cp ${EXECUTABLE} ${EXECUTABLE}.stripped
+	strip ${EXECUTABLE}.stripped
+
+# Requires:
+# make debug -j 4
+# make strip
+.PHONY: profile
+profile:
+	bloaty -d symbols --debug-file=${EXECUTABLE} ${EXECUTABLE}.stripped

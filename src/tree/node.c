@@ -14,6 +14,7 @@ struct tarot_node {
 		struct RelationalExpression RelationalExpression;
 		struct ArithmeticExpression ArithmeticExpression;
 		struct UnaryExpression UnaryExpression;
+		struct RangeExpression RangeExpression;
 		struct FunctionCall FunctionCall;
 		struct Relation Relation;
 		struct Subscript Subscript;
@@ -29,6 +30,7 @@ struct tarot_node {
 		struct ImportStatement ImportStatement;
 		struct IfStatement IfStatement;
 		struct WhileLoop WhileLoop;
+		struct ForLoop ForLoop;
 		struct MatchStatement MatchStatement;
 		struct CaseStatement CaseStatement;
 		struct Assignment Assignment;
@@ -42,6 +44,7 @@ struct tarot_node {
 		struct AssertStatement AssertStatement;
 		struct ClassDefinition ClassDefinition;
 		struct EnumDefinition EnumDefinition;
+		struct ClassConstructor ClassConstructor;
 		struct FunctionDefinition FunctionDefinition;
 		struct ForeignFunction ForeignFunction;
 		struct Namespace Namespace;
@@ -161,6 +164,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_Import:
 		case NODE_If:
 		case NODE_While:
+		case NODE_For:
 		case NODE_Match:
 		case NODE_Case:
 		case NODE_Assignment:
@@ -175,6 +179,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_Module:
 		case NODE_Class:
 		case NODE_Enum:
+		case NODE_Constructor:
 		case NODE_Function:
 		case NODE_ForeignFunction:
 		case NODE_Namespace:
@@ -201,6 +206,7 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Not",
 		"Neg",
 		"Abs",
+		"Range",
 		"FunctionCall",
 		"Relation",
 		"Subscript",
@@ -218,6 +224,7 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Import",
 		"If",
 		"While",
+		"For",
 		"Match",
 		"Case",
 		"Assignment",
@@ -231,6 +238,7 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Assert",
 		"Class",
 		"Enum",
+		"Constructor",
 		"Function",
 		"ForeignFunction",
 		"Namespace",
@@ -362,6 +370,11 @@ struct UnaryExpression* AbsExpression(struct tarot_node *node) {
 	return &node->as.UnaryExpression;
 }
 
+struct RangeExpression* RangeExpression(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Range);
+	return &node->as.RangeExpression;
+}
+
 struct FunctionCall* FunctionCall(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_FunctionCall);
 	return &node->as.FunctionCall;
@@ -381,7 +394,6 @@ struct Pair* Pair(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Pair);
 	return &node->as.Pair;
 }
-
 
 struct CastExpression* CastExpression(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Typecast);
@@ -448,6 +460,11 @@ struct WhileLoop* WhileLoop(struct tarot_node *node) {
 	return &node->as.WhileLoop;
 }
 
+struct ForLoop* ForLoop(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_For);
+	return &node->as.ForLoop;
+}
+
 struct MatchStatement* MatchStatement(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Match);
 	return &node->as.MatchStatement;
@@ -511,6 +528,11 @@ struct ClassDefinition* ClassDefinition(struct tarot_node *node) {
 struct EnumDefinition* EnumDefinition(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_Enum);
 	return &node->as.EnumDefinition;
+}
+
+struct ClassConstructor* ClassConstructor(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Constructor);
+	return &node->as.ClassConstructor;
 }
 
 struct FunctionDefinition* FunctionDefinition(struct tarot_node *node) {
@@ -610,6 +632,8 @@ uint16_t index_of(struct tarot_node *node) {
 		case NODE_Identifier:
 		case NODE_Subscript:
 			return index_of(link_of(node));
+		case NODE_Relation:
+			return index_of(Relation(node)->link);
 		case NODE_Enumerator:
 			return Enumerator(node)->index;
 		case NODE_Variable:
@@ -620,6 +644,8 @@ uint16_t index_of(struct tarot_node *node) {
 			return Parameter(node)->index;
 		case NODE_Function:
 			return FunctionDefinition(node)->index;
+		case NODE_Constructor:
+			return ClassConstructor(node)->index;
 		case NODE_ForeignFunction:
 			return ForeignFunction(node)->index;
 	}
@@ -687,6 +713,8 @@ struct tarot_string* name_of(struct tarot_node *node) {
 			return ClassDefinition(node)->name;
 		case NODE_Enum:
 			return EnumDefinition(node)->name;
+		case NODE_Constructor:
+			return name_of(link_of(node));
 		case NODE_Function:
 			return FunctionDefinition(node)->name;
 		case NODE_ForeignFunction:
@@ -749,6 +777,8 @@ struct tarot_node* link_of(struct tarot_node *node) {
 			return link_of(Type(node)->identifier);
 		case NODE_Import:
 			return link_of(ImportStatement(node)->identifier);
+		case NODE_Constructor:
+			return ClassConstructor(node)->link;
 	}
 }
 
@@ -777,6 +807,18 @@ struct tarot_node* definition_of(struct tarot_node *node) {
 			return definition_of(Type(node)->identifier);
 		case NODE_Import:
 			return definition_of(ImportStatement(node)->identifier);
+	}
+}
+
+struct tarot_list* scope_of(struct tarot_node *node) {
+	switch (kind_of(node)) {
+		default:
+			tarot_sourcecode_error(__FILE__, __LINE__, "Unexpected switchcase: %d", kind_of(node));
+			return NULL;
+		case NODE_Function:
+			return FunctionDefinition(node)->scope;
+		case NODE_Constructor:
+			return ClassConstructor(node)->scope;
 	}
 }
 
@@ -835,6 +877,8 @@ struct tarot_node* type_of(struct tarot_node *node) {
 			return type_of(definition_of(node));
 		case NODE_Function:
 			return type_of(FunctionDefinition(node)->return_value);
+		case NODE_Constructor:
+			return type_of(ClassConstructor(node)->link);
 		case NODE_ForeignFunction:
 			return type_of(ForeignFunction(node)->return_value);
 		case NODE_Class:
@@ -1034,6 +1078,11 @@ struct tarot_node* tarot_copy_node(struct tarot_node *original) {
 			WhileLoop(node)->condition = tarot_copy_node(WhileLoop(original)->condition);
 			WhileLoop(node)->block = tarot_copy_node(WhileLoop(original)->block);
 			break;
+		case NODE_For:
+			ForLoop(node)->identifier = tarot_copy_node(ForLoop(original)->identifier);
+			ForLoop(node)->expression = tarot_copy_node(ForLoop(original)->expression);
+			ForLoop(node)->block = tarot_copy_node(ForLoop(original)->block);
+			break;
 		case NODE_Match:
 			MatchStatement(node)->pattern = tarot_copy_node(MatchStatement(original)->pattern);
 			MatchStatement(node)->block = tarot_copy_node(MatchStatement(original)->block);
@@ -1080,6 +1129,11 @@ struct tarot_node* tarot_copy_node(struct tarot_node *original) {
 		case NODE_Enum:
 			EnumDefinition(node)->name = tarot_copy_string(EnumDefinition(original)->name);
 			EnumDefinition(node)->block = tarot_copy_node(EnumDefinition(original)->block);
+			break;
+		case NODE_Constructor:
+			ClassConstructor(node)->parameters = tarot_copy_node(ClassConstructor(original)->parameters);
+			ClassConstructor(node)->block = tarot_copy_node(ClassConstructor(original)->block);
+			ClassConstructor(node)->scope = tarot_copy_list(ClassConstructor(original)->scope);
 			break;
 		case NODE_Function:
 			FunctionDefinition(node)->name = tarot_copy_string(FunctionDefinition(original)->name);
@@ -1198,6 +1252,9 @@ static void free_node(
 		case NODE_Enum:
 			tarot_free_string(EnumDefinition(node)->name);
 			break;
+		case NODE_Constructor:
+			destroy_scope(ClassConstructor(node)->scope);
+			break;
 		case NODE_Function:
 			tarot_free_string(FunctionDefinition(node)->name);
 			destroy_scope(FunctionDefinition(node)->scope);
@@ -1295,15 +1352,21 @@ static void traverse_node(
 		case NODE_Abs:
 			traverse_node(&AbsExpression(node)->expression, state);
 			break;
+		case NODE_Range:
+			traverse_node(&RangeExpression(node)->start, state);
+			traverse_node(&RangeExpression(node)->end, state);
+			traverse_node(&RangeExpression(node)->stepsize, state);
+			break;
 		case NODE_FunctionCall:
 			traverse_node(&FunctionCall(node)->identifier, state);
 			traverse_node(&FunctionCall(node)->arguments, state);
 			break;
 		case NODE_Relation:
 			traverse_node(&Relation(node)->parent, state);
+			/* error what if class is freed *
 			if (kind_of(Relation(node)->link) == NODE_Builtin) {
 				traverse_node(&Relation(node)->link, state);
-			}
+			}*/
 			break;
 		case NODE_Subscript:
 			traverse_node(&Subscript(node)->identifier, state);
@@ -1346,6 +1409,11 @@ static void traverse_node(
 		case NODE_While:
 			traverse_node(&WhileLoop(node)->condition, state);
 			traverse_node(&WhileLoop(node)->block, state);
+			break;
+		case NODE_For:
+			traverse_node(&ForLoop(node)->identifier, state);
+			traverse_node(&ForLoop(node)->expression, state);
+			traverse_node(&ForLoop(node)->block, state);
 			break;
 		case NODE_Match:
 			traverse_node(&MatchStatement(node)->pattern, state);
@@ -1394,6 +1462,10 @@ static void traverse_node(
 			break;
 		case NODE_Enum:
 			traverse_node(&EnumDefinition(node)->block, state);
+			break;
+		case NODE_Constructor:
+			traverse_node(&ClassConstructor(node)->parameters, state);
+			traverse_node(&ClassConstructor(node)->block, state);
 			break;
 		case NODE_Function:
 			traverse_node(&FunctionDefinition(node)->parameters, state);
@@ -1510,6 +1582,9 @@ static void print_node(
 	switch (kind_of(node)) {
 		default:
 			break;
+		case NODE_Block:
+			tarot_fprintf(stream, "num_elements:%zu", Block(node)->num_elements);
+			break;
 		case NODE_Module:
 			tarot_fprintf(stream, "num_errors:%zu ", Module(node)->num_errors);
 			tarot_fprintf(stream, "num_nodes:%zu ", Module(node)->num_nodes);
@@ -1524,6 +1599,9 @@ static void print_node(
 			tarot_print_string(stream, name_of(node));
 			break;
 		case NODE_Class:
+			tarot_fputs(stream, "name:");
+			tarot_print_string(stream, name_of(node));
+			break;
 		case NODE_Enum:
 		case NODE_Function:
 		case NODE_Variable:
@@ -1531,6 +1609,11 @@ static void print_node(
 		case NODE_Constant:
 			tarot_fputs(stream, "name:");
 			tarot_print_string(stream, name_of(node));
+			tarot_fprintf(stream, " index:%d", index_of(node));
+			break;
+		case NODE_Constructor:
+			tarot_fprintf(stream, "link:%p", link_of(node));
+			tarot_fprintf(stream, " index:%d", index_of(node));
 			break;
 		case NODE_Relation:
 			tarot_fputs(stream, "attribute:");
