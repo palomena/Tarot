@@ -1,19 +1,28 @@
-class Cool {
-	__init__() {
-
-	}
-
-	public function say(x: String) {
-		println(x);
-	}
+function foo() {
+	let x = 12;
+	bar();
+	println("shouldnt be printed"); # skip over
 }
 
+# functions should have single return and use goto to jump to (it + finally)
+
+function bar() {
+	let x = f"§§§§§{88+9}§§§§§§§§§§§§§§";
+	println("bar");
+	raise foo;
+}
 
 function main() {
-	let x = Cool();
-	x.say("Hello!"); # set self -> push self! methods always take self as first argument! except constructors
+	try {
+		println(f"{2+23213}brabra{12313+1}");
+		foo();
+		println("wtf!");
+	} catch {
+		println("catch");
+	}
 }
 
+# stacktrace
 # finish up "for i in range" loop implementation + for obj in x {}
 # clean dict implementation
 # try catch

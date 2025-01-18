@@ -14,17 +14,9 @@ struct tarot_node;
 
 struct tarot_function {
 	uint16_t address;
+	uint16_t finally;
 	uint16_t info;
 };
-
-extern void tarot_setup_function(
-	struct tarot_function *function,
-	uint16_t address,
-	uint8_t num_parameters,
-	uint8_t num_variables,
-	bool returns_value,
-	bool is_method
-);
 
 extern size_t tarot_num_parameters(struct tarot_function *function);
 
@@ -107,5 +99,10 @@ extern uint8_t* tarot_bytecode_data(struct tarot_bytecode_header *bytecode);
 #ifdef TAROT_SOURCE
 extern const char* read_string(struct tarot_bytecode *bytecode, uint16_t offset);
 #endif /* TAROT_SOURCE */
+
+extern const char* tarot_get_function_name(
+	struct tarot_bytecode *bytecode,
+	struct tarot_function *function
+);
 
 #endif /* TAROT_BYTECODE_H */

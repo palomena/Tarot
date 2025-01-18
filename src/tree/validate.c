@@ -106,6 +106,8 @@ static bool validate_functioncall(struct tarot_node *node) {
 	size_t i;
 	if (kind_of(function) == NODE_Function) {
 		parameters = FunctionDefinition(function)->parameters;
+	} else if (kind_of(function) == NODE_Method) {
+		parameters = MethodDefinition(function)->parameters;
 	} else if (kind_of(function) == NODE_ForeignFunction) {
 		parameters = ForeignFunction(function)->parameters;
 	} else if (kind_of(function) == NODE_Class) {

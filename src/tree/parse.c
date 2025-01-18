@@ -992,6 +992,27 @@ static struct tarot_node* parse_function(struct tarot_parser *parser) {
 	return result(parser, node);
 }
 
+static struct tarot_node* parse_method(struct tarot_parser *parser) {
+	struct tarot_node *node = NULL;
+	struct tarot_token token;
+	if (match(parser, TAROT_TOK_FUNCTION, &token)) {
+		node = tarot_create_node(NODE_Method, &token.position);
+		MethodDefinition(node)->name = read_identifier(parser);
+		MethodDefinition(node)->scope = create_scope();
+		enter_node(&parser->scopes, node);
+		expect(parser, TAROT_TOK_OPEN_BRACKET);
+		MethodDefinition(node)->parameters = parse_comma_seperated(parser, parse_parameter);
+		index_parameters(MethodDefinition(node)->parameters);
+		expect(parser, TAROT_TOK_CLOSE_BRACKET);
+		if (match(parser, TAROT_TOK_ARROW, &token)) {
+			MethodDefinition(node)->return_value = parse_datatype(parser);
+		}
+		MethodDefinition(node)->block = parse_scoped_block(parser, parse_statement);
+		leave_node(&parser->scopes, node);
+	}
+	return result(parser, node);
+}
+
 static struct tarot_node* parse_constructor(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	struct tarot_token token;
@@ -1064,7 +1085,8 @@ static struct tarot_node* parse_import(struct tarot_parser *parser);
 static struct tarot_node* parse_member(struct tarot_parser *parser) {
 	struct tarot_node *node = NULL;
 	(node = parse_constructor(parser)) or
-	(node = parse_definition(parser))  or
+	(node = parse_method(parser))      or
+	/*(node = parse_definition(parser))  or*/
 	(node = parse_constant(parser))    or
 	(node = parse_import(parser))      or
 	(node = parse_attribute(parser));
@@ -1175,6 +1197,9 @@ static void set_visibility(
 			break;
 		case NODE_Function:
 			FunctionDefinition(node)->visibility = visibility;
+			break;
+		case NODE_Method:
+			MethodDefinition(node)->visibility = visibility;
 			break;
 		case NODE_ForeignFunction:
 			ForeignFunction(node)->visibility = visibility;

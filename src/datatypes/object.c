@@ -17,10 +17,8 @@ struct tarot_object* tarot_create_object(unsigned int n) {
 /* Make free value function */
 void tarot_free_object(struct tarot_object *object) {
 	unsigned int i;
-	printf("free %p\n", object);
 	for (i = 0; i < object->num_attributes; i++) {
 		union tarot_value *attribute = &object->attributes[i];
-		printf("free-a %p\n", attribute);
 		switch (header_of(attribute->Pointer)->type) {
 			default:
 			puts("estststr");

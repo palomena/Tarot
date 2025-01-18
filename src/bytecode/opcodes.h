@@ -73,6 +73,7 @@ enum tarot_opcode {
 	OP_DeleteObject,
 	OP_LoadAttribute,
 	OP_Self,
+	OP_PopSelf,
 	OP_CopyObject,
 	/* MARK: Logical */
 	OP_PushTrue,

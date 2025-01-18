@@ -101,12 +101,14 @@ int tarot_export_bytecode(const char *path, struct tarot_bytecode *bytecode) {
 void tarot_setup_function(
 	struct tarot_function *function,
 	uint16_t address,
+	uint16_t finally,
 	uint8_t num_parameters,
 	uint8_t num_variables,
 	bool returns_value,
 	bool is_method
 ) {
 	function->address = address;
+	function->finally = finally;
 	function->info |= num_parameters << (16-4);
 	function->info |= num_variables << (16-4-7);
 	function->info |= returns_value << (16-4-7-1);
@@ -433,12 +435,13 @@ static void print_function_section(
 			print_name(stream, function_name);
 		}
 		tarot_printf(
-			"address: %u (parameters: %u, returns: %s, method: %s, variables: %u)\n",
+			"address: %u (parameters: %u, returns: %s, method: %s, variables: %u, finally: %u)\n",
 			function->address,
 			tarot_num_parameters(function),
 			tarot_bool_string(tarot_returns(function)),
 			tarot_bool_string(tarot_is_method(function)),
-			tarot_num_variables(function)
+			tarot_num_variables(function),
+			function->finally
 		);
 	}
 	tarot_indent(stream, -1);
@@ -667,11 +670,30 @@ static void register_function(struct tarot_generator *generator, struct tarot_no
 		function = function_index(generator->bytecode, FunctionDefinition(node)->index);
 		tarot_setup_function(
 			function,
-			generator->offset.instructions,
+			FunctionDefinition(node)->address,
+			FunctionDefinition(node)->finally,
 			Block(FunctionDefinition(node)->parameters)->num_elements,
 			tarot_list_length(FunctionDefinition(node)->scope)
 			- Block(FunctionDefinition(node)->parameters)->num_elements,
 			FunctionDefinition(node)->return_value != NULL,
+			false
+		);
+	}
+	generator->offset.functions += sizeof(*function);
+}
+
+static void register_method(struct tarot_generator *generator, struct tarot_node *node) {
+	struct tarot_function *function;
+	if (not read_only(generator)) {
+		function = function_index(generator->bytecode, MethodDefinition(node)->index);
+		tarot_setup_function(
+			function,
+			generator->offset.instructions,
+			generator->offset.instructions,
+			Block(MethodDefinition(node)->parameters)->num_elements,
+			tarot_list_length(MethodDefinition(node)->scope)
+			- Block(MethodDefinition(node)->parameters)->num_elements,
+			MethodDefinition(node)->return_value != NULL,
 			false
 		);
 	}
@@ -684,6 +706,7 @@ static void register_constructor(struct tarot_generator *generator, struct tarot
 		function = function_index(generator->bytecode, ClassConstructor(node)->index);
 		tarot_setup_function(
 			function,
+			generator->offset.instructions,
 			generator->offset.instructions,
 			Block(ClassConstructor(node)->parameters)->num_elements,
 			tarot_list_length(ClassConstructor(node)->scope)
@@ -704,6 +727,7 @@ static void register_foreign_function(struct tarot_generator *generator, struct 
 		function = (struct tarot_function*)&generator->foreign_functions[generator->offset.foreign_functions];
 		tarot_setup_function(
 			function,
+			generator->offset.data,
 			generator->offset.data,
 			Block(ForeignFunction(node)->parameters)->num_elements,
 			0,
@@ -1145,6 +1169,13 @@ static void generate_function_call(
 		generate(generator, FunctionCall(node)->arguments);
 		write_instruction(generator, OP_CallFunction);
 		write_argument(generator, index_of(definition_of(node)));
+	} else if (kind_of(definition_of(node)) == NODE_Method) {
+		if (kind_of(FunctionCall(node)->identifier) == NODE_Relation) {
+			generate(generator, Relation(FunctionCall(node)->identifier)->parent);
+		}
+		generate(generator, FunctionCall(node)->arguments);
+		write_instruction(generator, OP_CallFunction);
+		write_argument(generator, index_of(definition_of(node)));
 	} else if (kind_of(definition_of(node)) == NODE_ForeignFunction) {
 		generate(generator, FunctionCall(node)->arguments);
 		write_instruction(generator, OP_CallForeignFunction);
@@ -1503,28 +1534,27 @@ static void generate_function(
 	struct tarot_generator *generator,
 	struct tarot_node *node
 ) {
-	if (tarot_match_string(FunctionDefinition(node)->name, "__init__")) {
-		FunctionDefinition(node)->return_value = 1;
-	}
 	register_function(generator, node);
-	if (tarot_match_string(FunctionDefinition(node)->name, "__init__")) {
-		FunctionDefinition(node)->return_value = NULL;
-	}
+	FunctionDefinition(node)->address = generator->offset.instructions;
 	write_debug(generator, name_of(node));
-	if (tarot_match_string(FunctionDefinition(node)->name, "__init__")) {
-		write_instruction(generator, OP_NewObject);
-		write_argument(generator, 2); /* require class num attrs */
-	}
 	generate(generator, FunctionDefinition(node)->block);
+	FunctionDefinition(node)->finally = generator->offset.instructions;
 	free_function_variables(generator, scope_of(node), NULL);
-	if (tarot_match_string(FunctionDefinition(node)->name, "__init__")) {
-		write_instruction(generator, OP_Self);
-		write_instruction(generator, OP_Return);
-		write_argument(generator, TYPE_CUSTOM);
-	} else {
-		write_instruction(generator, OP_Return);
-		write_argument(generator, TYPE_VOID);
-	}
+	write_instruction(generator, OP_Return);
+	write_argument(generator, TYPE_VOID);
+}
+
+static void generate_method(
+	struct tarot_generator *generator,
+	struct tarot_node *node
+) {
+	register_method(generator, node);
+	write_debug(generator, name_of(node));
+	write_instruction(generator, OP_PopSelf);
+	generate(generator, MethodDefinition(node)->block);
+	free_function_variables(generator, scope_of(node), NULL);
+	write_instruction(generator, OP_Return);
+	write_argument(generator, TYPE_VOID);
 }
 
 static void generate_foreign_function(
@@ -2032,6 +2062,9 @@ static void generate(struct tarot_generator *generator, struct tarot_node *node)
 			break;
 		case NODE_Function:
 			generate_function(generator, node);
+			break;
+		case NODE_Method:
+			generate_method(generator, node);
 			break;
 		case NODE_ForeignFunction:
 			generate_foreign_function(generator, node);

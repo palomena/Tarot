@@ -127,6 +127,7 @@ enum tarot_node_kind {
 	NODE_Enum,
 	NODE_Constructor,
 	NODE_Function,
+	NODE_Method,
 	NODE_ForeignFunction,
 	NODE_Namespace,
 	NODE_TypeDefinition,
@@ -922,12 +923,19 @@ struct FunctionDefinition {
 	struct tarot_list *scope;
 	enum tarot_visibility visibility;
 	uint16_t index;
+	uint16_t address;
+	uint16_t finally;
 };
 
 /**
  *
  */
 extern struct FunctionDefinition* FunctionDefinition(struct tarot_node *node);
+
+/**
+ *
+ */
+extern struct FunctionDefinition* MethodDefinition(struct tarot_node *node);
 
 /******************************************************************************
  * MARK: ForeignFunction

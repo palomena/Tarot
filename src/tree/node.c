@@ -181,6 +181,7 @@ enum tarot_node_class class_of(struct tarot_node *node) {
 		case NODE_Enum:
 		case NODE_Constructor:
 		case NODE_Function:
+		case NODE_Method:
 		case NODE_ForeignFunction:
 		case NODE_Namespace:
 		case NODE_TypeDefinition:
@@ -241,6 +242,7 @@ const char* node_string(enum tarot_node_kind kind) {
 		"Enum",
 		"Constructor",
 		"Function",
+		"Method",
 		"ForeignFunction",
 		"Namespace",
 		"TypeDefinition",
@@ -543,6 +545,11 @@ struct FunctionDefinition* FunctionDefinition(struct tarot_node *node) {
 	return &node->as.FunctionDefinition;
 }
 
+struct FunctionDefinition* MethodDefinition(struct tarot_node *node) {
+	assert(kind_of(node) == NODE_Method);
+	return &node->as.FunctionDefinition;
+}
+
 struct ForeignFunction* ForeignFunction(struct tarot_node *node) {
 	assert(kind_of(node) == NODE_ForeignFunction);
 	return &node->as.ForeignFunction;
@@ -659,6 +666,8 @@ uint16_t index_of(struct tarot_node *node) {
 			return Parameter(node)->index;
 		case NODE_Function:
 			return FunctionDefinition(node)->index;
+		case NODE_Method:
+			return MethodDefinition(node)->index;
 		case NODE_Constructor:
 			return ClassConstructor(node)->index;
 		case NODE_ForeignFunction:
@@ -732,6 +741,8 @@ struct tarot_string* name_of(struct tarot_node *node) {
 			return name_of(link_of(node));
 		case NODE_Function:
 			return FunctionDefinition(node)->name;
+		case NODE_Method:
+			return MethodDefinition(node)->name;
 		case NODE_ForeignFunction:
 			return ForeignFunction(node)->name;
 		case NODE_Namespace:
@@ -762,6 +773,8 @@ enum tarot_visibility visibility_of(struct tarot_node *node) {
 			return EnumDefinition(node)->visibility;
 		case NODE_Function:
 			return FunctionDefinition(node)->visibility;
+		case NODE_Method:
+			return MethodDefinition(node)->visibility;
 		case NODE_ForeignFunction:
 			return ForeignFunction(node)->visibility;
 		case NODE_Namespace:
@@ -834,6 +847,8 @@ struct tarot_list* scope_of(struct tarot_node *node) {
 			return NULL;
 		case NODE_Function:
 			return FunctionDefinition(node)->scope;
+		case NODE_Method:
+			return MethodDefinition(node)->scope;
 		case NODE_Constructor:
 			return ClassConstructor(node)->scope;
 	}
@@ -894,6 +909,8 @@ struct tarot_node* type_of(struct tarot_node *node) {
 			return type_of(definition_of(node));
 		case NODE_Function:
 			return type_of(FunctionDefinition(node)->return_value);
+		case NODE_Method:
+			return type_of(MethodDefinition(node)->return_value);
 		case NODE_Constructor:
 			return type_of(ClassConstructor(node)->link);
 		case NODE_ForeignFunction:
@@ -1161,6 +1178,13 @@ struct tarot_node* tarot_copy_node(struct tarot_node *original) {
 			FunctionDefinition(node)->block = tarot_copy_node(FunctionDefinition(original)->block);
 			FunctionDefinition(node)->scope = tarot_copy_list(FunctionDefinition(original)->scope);
 			break;
+		case NODE_Method:
+			MethodDefinition(node)->name = tarot_copy_string(MethodDefinition(original)->name);
+			MethodDefinition(node)->parameters = tarot_copy_node(MethodDefinition(original)->parameters);
+			MethodDefinition(node)->return_value = tarot_copy_node(MethodDefinition(original)->return_value);
+			MethodDefinition(node)->block = tarot_copy_node(MethodDefinition(original)->block);
+			MethodDefinition(node)->scope = tarot_copy_list(MethodDefinition(original)->scope);
+			break;
 		case NODE_ForeignFunction:
 			ForeignFunction(node)->name = tarot_copy_string(ForeignFunction(original)->name);
 			ForeignFunction(node)->parameters = tarot_copy_node(ForeignFunction(original)->parameters);
@@ -1282,6 +1306,10 @@ static void free_node(
 		case NODE_Function:
 			tarot_free_string(FunctionDefinition(node)->name);
 			destroy_scope(FunctionDefinition(node)->scope);
+			break;
+		case NODE_Method:
+			tarot_free_string(MethodDefinition(node)->name);
+			destroy_scope(MethodDefinition(node)->scope);
 			break;
 		case NODE_ForeignFunction:
 			tarot_free_string(ForeignFunction(node)->name);
@@ -1499,6 +1527,11 @@ static void traverse_node(
 			traverse_node(&FunctionDefinition(node)->return_value, state);
 			traverse_node(&FunctionDefinition(node)->block, state);
 			break;
+		case NODE_Method:
+			traverse_node(&MethodDefinition(node)->parameters, state);
+			traverse_node(&MethodDefinition(node)->return_value, state);
+			traverse_node(&MethodDefinition(node)->block, state);
+			break;
 		case NODE_ForeignFunction:
 			traverse_node(&ForeignFunction(node)->parameters, state);
 			traverse_node(&ForeignFunction(node)->return_value, state);
@@ -1635,6 +1668,7 @@ static void print_node(
 			break;
 		case NODE_Enum:
 		case NODE_Function:
+		case NODE_Method:
 		case NODE_Variable:
 		case NODE_Attribute:
 		case NODE_Parameter:

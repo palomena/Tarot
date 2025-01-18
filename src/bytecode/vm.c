@@ -107,14 +107,11 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		opcode = *ip++;
 
 		switch (opcode) {
-			union tarot_value a, b, z, *var;
-			struct tarot_object *cls;
+			union tarot_value a, b, z;
 			enum tarot_datatype type;
 			size_t i, length;
-			bool state;
 
-		halt:
-		case OP_Halt:
+		case OP_Halt: halt:
 			free_thread(thread);
 			return;
 
@@ -148,11 +145,33 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			pop_try(thread);
 			break;
 
+/*
+TODO:
+   * exceptstack per function!
+   * on OP_raiseException: look for handler in current functions except stack
+   * if handler found -> good, jump to it.
+   * if handler not found -> free current variables, return from function via tarot_return(), then look in upper functions handler until found.
+   * this could be done in a loop while(not found) { unwind_stack() }
+   * ------> big problem: how do we free things in upper functions? we don't continue executing, so no frees taking place...
+   * maybe a flag that is checked in op_return? set to true in initial return. If no exception in current stack is found, set ip (goto) to end of function by cleanup
+   * then resume execution. OP_Return is hit, where the flag is checked and if its true, after returning we jump (goto) to cleanup and return again, provided
+   * we don't find the handler in the current function again. The handler is searched for in tarot_return() if the flag is set by another function call.
+   * This requires us to track the end/cleanup address of every function and we need to check which variables we must/can free.
+*/
+
+/* TODO: Include line number and file for occurance? */
 		case OP_RaiseException:
 			/* Make seperate push before raise, so that we can reraise via stack */
 			z.Index = tarot_read16bit(ip, &ip); /* exception uid */
 			tarot_push(thread, z);
-			ip = vm->bytecode->instructions + current_try(thread);
+			if (handler_available(thread)) {
+				ip = vm->bytecode->instructions + current_try(thread);
+			} else {
+				/* goto finally+return */
+				thread->stacktrace = tarot_create_list(sizeof(struct tarot_function), 16, NULL);
+				tarot_list_append(&thread->stacktrace, current_frame(thread)->function);
+				thread->except = true;
+			}
 			/*handle_exception(thread);*/
 			/* if not found return and continue searching */
 			/* I think exceptions need to be on callstack for unwinding */
@@ -188,34 +207,27 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_remove_from_region(thread, z.Integer);
 			tarot_free_integer(b.Value->Integer);
 			*b.Value = z;
-			*var = z;
 			break;
 
 		case OP_StoreRational:
 			z = tarot_pop(thread);
 			tarot_remove_from_region(thread, z.Rational);
-			tarot_free_rational(var->Rational);
-			*var = z;
 			break;
 
 		case OP_StoreString:
 			b = tarot_pop(thread);
 			z = tarot_pop(thread);
-			printf("remove %p to region\n", b.Pointer);
-			printf("remove %p to region\n", z.String);
 			tarot_remove_from_region(thread, z.String);
 			tarot_free_string(b.Value->String);
 			*b.Value = z;
-			*var = z;
 			break;
 
 		case OP_StoreList:
 			b = tarot_pop(thread);
 			z = tarot_pop(thread);
 			tarot_remove_from_region(thread, z.List);
-			tarot_free_list(var->List);
+			tarot_free_list(b.Value->List);
 			*b.Value = z;
-			*var = z;
 			break;
 
 		case OP_LoadValue:
@@ -223,7 +235,8 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_LoadArgument:
-			tarot_push(thread, tarot_argument(thread, tarot_read16bit(ip, &ip)));
+			i = tarot_read16bit(ip, &ip);
+			tarot_push(thread, tarot_argument(thread, i));
 			break;
 
 		case OP_LoadVariablePointer:
@@ -235,13 +248,15 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			a = tarot_pop(thread);
 			z = tarot_pop(thread);
 			i = tarot_integer_to_short(a.Integer);
-			var = (union tarot_value*)tarot_list_element(z.List, i);
+			b.Value = (union tarot_value*)tarot_list_element(z.List, i);
+			tarot_push(thread, b);
 			break;
 
 		case OP_LoadDictIndex:
 			a = tarot_pop(thread);
 			z = tarot_pop(thread);
-			var = tarot_dict_lookup(z.List, a);
+			b.Value = tarot_dict_lookup(z.List, a);
+			tarot_push(thread, b);
 			break;
 
 		case OP_Track:
@@ -261,9 +276,6 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, z);
 			/*tarot_add_to_region(thread, z.Object);*/
 			*tarot_self(thread) = z;
-			printf("new %p\n", tarot_self(thread)->Object);
-			var = &z;
-			cls = z.Object;
 			break;
 
 		case OP_DeleteObject:
@@ -274,9 +286,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_LoadAttribute:
 			i = tarot_read8bit(ip, &ip);
 			z = tarot_pop(thread);
-			printf("%p\n", z.Object);
 			a.Value = tarot_object_attribute(z.Object, i);
-			var = a.Value;
 			tarot_push(thread, a);
 			break;
 
@@ -285,8 +295,11 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_Self:
-			printf("%p\n", tarot_self(thread)->Object);
 			tarot_push(thread, *tarot_self(thread));
+			break;
+
+		case OP_PopSelf:
+			*tarot_self(thread) = tarot_pop(thread);
 			break;
 
 		/*
@@ -328,6 +341,19 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					tarot_add_to_region(thread, z.Dict);
 					tarot_push(thread, z);
 					break;
+			}
+			if (thread->except) {
+				if (handler_available(thread)) {
+					ip = vm->bytecode->instructions + current_try(thread);
+					thread->except = false;
+					tarot_print_stacktrace(tarot_stdout, vm->bytecode, thread->stacktrace);
+					tarot_free_list(thread->stacktrace);
+				} else {
+					/* goto finally+return */
+					thread->except = true;
+					ip = vm->bytecode->instructions + current_frame(thread)->function->finally;
+					tarot_list_append(&thread->stacktrace, current_frame(thread)->function);
+				}
 			}
 			break;
 
@@ -414,7 +440,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_FreeInteger:
-			tarot_free_integer(var->Integer);
+			tarot_free_integer(tarot_pop(thread).Value->Integer);
 			break;
 
 		case OP_CastToInteger:
@@ -785,12 +811,11 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 		case OP_CopyString:
 			z.String = tarot_copy_string(tarot_pop(thread).String);
 			tarot_add_to_region(thread, z.String);
-			printf("add %p to region\n", z.String);
 			tarot_push(thread, z);
 			break;
 
 		case OP_FreeString:
-			tarot_free_string(var->String);
+			tarot_free_string(tarot_pop(thread).Value->String);
 			break;
 
 		case OP_CastToString:
@@ -867,7 +892,6 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			z.List = tarot_create_list(sizeof(z), 5, NULL);
 			tarot_set_list_datatype(z.List, type);
 			tarot_push(thread, z);
-			var = tarot_topptr(thread);
 			tarot_add_to_region(thread, z.List);
 			break;
 
@@ -880,7 +904,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			break;
 
 		case OP_FreeList: {
-			tarot_free_list(var->List);
+			tarot_free_list(tarot_pop(thread).Value->List);
 			break;
 		}
 
@@ -891,7 +915,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, a);
 			break;
 
-		case OP_ListAppend:
+		case OP_ListAppend:/*
 			z = tarot_pop(thread);
 			switch (tarot_get_list_datatype(var->List)) {
 				case TYPE_LIST:
@@ -911,7 +935,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 					tarot_remove_from_region(thread, ptr);
 					tarot_add_to_region(thread, var->List);
 				}
-			}
+			}*/
 			break;
 
 		case OP_PushDict:
@@ -934,7 +958,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 			tarot_push(thread, z);
 			break;
 
-		case OP_FreeDict: {
+		case OP_FreeDict: {/*
 			enum tarot_datatype type = tarot_read16bit(ip, &ip);
 			for (i = 0; i < tarot_list_length(var->List); i++) {
 				struct dict_item *item = tarot_list_element(var->List, i);
@@ -942,7 +966,7 @@ void tarot_attach_executor(struct tarot_virtual_machine *vm) {
 				if (type == TYPE_INTEGER) tarot_free_integer(item->value.Integer);
 				else if (type == TYPE_STRING) tarot_free_string(item->value.String);
 				else if (type == TYPE_RATIONAL) tarot_free_rational(item->value.Rational);
-			}
+			}*/
 			/*tarot_free_list(z.List);*/  /* currently still resides within region, would need a StoreList opcode */
 			break;
 		}

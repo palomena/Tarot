@@ -62,11 +62,17 @@ struct tarot_scope {
 	uint8_t index;
 };
 
+struct tarot_exception_stack {
+	uint16_t frames[16];
+	uint8_t index;
+};
+
 struct stackframe {
 	void *return_address;
 	struct tarot_function *function;
 	union tarot_value self;
 	struct tarot_scope scope;
+	struct tarot_exception_stack except;
 	size_t baseptr;
 	size_t ptr;
 };
@@ -77,18 +83,14 @@ struct tarot_callstack {
 	size_t size;
 };
 
-struct tarot_exception_stack {
-	uint16_t frames[16];
-	uint8_t index;
-};
-
 struct tarot_thread {
 	uint8_t *instruction_pointer;
 	struct tarot_thread *next_thread;
 	struct tarot_thread *previous_thread;
 	struct tarot_stack stack;
 	struct tarot_callstack callstack;
-	struct tarot_exception_stack exceptstack;
+	struct tarot_list *stacktrace;
+	bool except;
 };
 
 /**
@@ -109,6 +111,13 @@ extern void push_try(struct tarot_thread *thread, uint16_t handlers_start);
 extern void pop_try(struct tarot_thread *thread);
 extern uint16_t current_try(struct tarot_thread *thread);
 extern bool handle_exception(struct tarot_thread *thread);
+extern bool handler_available(struct tarot_thread *thread);
+
+extern void tarot_print_stacktrace(
+	struct tarot_iostream *stream,
+	struct tarot_bytecode *bytecode,
+	struct tarot_list *stacktrace
+);
 
 #endif /* TAROT_SOURCE */
 

@@ -34,6 +34,7 @@ const char* opcode_string(enum tarot_opcode opcode) {
 		"DeleteObject",
 		"LoadAttribute",
 		"Self",
+		"PopSelf",
 		"CopyObject",
 		"PushTrue",
 		"PushFalse",

@@ -220,6 +220,15 @@ static void index_node(
 			}
 			analyzer->variable_index = 0;
 			break;
+		case NODE_Method:
+			if (tarot_match_string(name_of(node), "main")) {
+				MethodDefinition(node)->index = 0;
+				analyzer->has_main_function = true;
+			} else {
+				MethodDefinition(node)->index = ++analyzer->function_index;
+			}
+			analyzer->variable_index = 0;
+			break;
 		case NODE_Class:
 			analyzer->attribute_index = 0;
 			break;

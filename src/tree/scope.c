@@ -53,6 +53,10 @@ void enter_node(struct scope_stack *stack, struct tarot_node *node) {
 			enter_scope(stack, &FunctionDefinition(node)->scope);
 			stack->function = node;
 			break;
+		case NODE_Method:
+			enter_scope(stack, &MethodDefinition(node)->scope);
+			stack->function = node;
+			break;
 		case NODE_Import:
 		case NODE_Type:
 			stack->type_checking++;
@@ -76,6 +80,10 @@ void leave_node(struct scope_stack *stack, struct tarot_node *node) {
 			break;
 		case NODE_Function:
 			leave_scope(stack, FunctionDefinition(node)->scope);
+			stack->function = NULL;
+			break;
+		case NODE_Method:
+			leave_scope(stack, MethodDefinition(node)->scope);
 			stack->function = NULL;
 			break;
 		case NODE_Import:

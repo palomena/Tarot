@@ -160,24 +160,45 @@ void print_thread(struct tarot_thread *thread) {
 }
 
 void push_try(struct tarot_thread *thread, uint16_t handlers_start) {
-	assert(thread->exceptstack.index < lengthof(thread->exceptstack.frames));
-	thread->exceptstack.frames[thread->exceptstack.index++] = handlers_start;
+	assert(current_frame(thread)->except.index < lengthof(current_frame(thread)->except.frames));
+	current_frame(thread)->except.frames[current_frame(thread)->except.index++] = handlers_start;
 }
 
 void pop_try(struct tarot_thread *thread) {
-	assert(thread->exceptstack.index > 0);
-	thread->exceptstack.index--;
+	assert(current_frame(thread)->except.index > 0);
+	current_frame(thread)->except.index--;
+}
+
+bool handler_available(struct tarot_thread *thread) {
+	size_t i;
+	for (i = 0; i < current_frame(thread)->except.index; i++) {
+		current_frame(thread)->except.frames;
+		return true;
+	}
+	return false;
 }
 
 uint16_t current_try(struct tarot_thread *thread) {
-	assert(thread->exceptstack.index > 0);
-	return thread->exceptstack.frames[thread->exceptstack.index-1];
+	assert(current_frame(thread)->except.index > 0);
+	return current_frame(thread)->except.frames[current_frame(thread)->except.index-1];
 }
 
 bool handle_exception(struct tarot_thread *thread) {
 	unsigned int i;
-	for (i = thread->exceptstack.index; i > 0; i--) {
-		uint16_t frame = thread->exceptstack.frames[i-1];
+	for (i = current_frame(thread)->except.index; i > 0; i--) {
+		uint16_t frame = current_frame(thread)->except.frames[i-1];
 
+	}
+}
+
+void tarot_print_stacktrace(
+	struct tarot_iostream *stream,
+	struct tarot_bytecode *bytecode,
+	struct tarot_list *stacktrace
+) {
+	size_t i;
+	for (i = 0; i < tarot_list_length(stacktrace); i++) {
+		struct tarot_function *function = tarot_list_element(stacktrace, i);
+		puts(tarot_get_function_name(bytecode, function));
 	}
 }
