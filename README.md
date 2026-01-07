@@ -7,6 +7,7 @@ A mystic programming language.
 
 ## About
 * Multi-paradigm programming language
+* Zero dependencies, 100% handwritten, ships with its own handwritten standard library and runtime environment
 * Modern C-style syntax
 * Strong static type system
 * Compiles to compact bytecode
@@ -14,6 +15,7 @@ A mystic programming language.
 * Implemented in freestanding ISO C90
 * Small footprint; suited for embedded systems
 * Arbitrary-precision builtin datatypes
+* Modern "stuff" like f-strings
 * Builtin scalable multi-threading (WIP)
 * Exception handling (WIP)
 
