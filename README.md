@@ -1,5 +1,7 @@
 <img src="data/images/chariot-6016921_1920.jpg" width="120px" /> <img src="data/images/empress-6016923_1920.jpg" width="120px" /> <img src="data/images/hermit-6016941_1920.jpg"  width="120px" /> <img src="data/images/hanged-man-6016939_1920.jpg"  width="120px" /> <img src="data/images/tarot-6129686_1920.jpg"  width="120px" />
 
+> **THIS IS WORK IN PROGESS. MY TOY PROJECT THAT I'M COMING BACK TO EVERY OTHER YEAR OR SO. IN DEVELOPMENT SINCE 2019 AND HAS SINCE SEEN NUMEROUS REVISIONS AND ITERATIONS. DO NOT RE-USE WITHOUT SPENDING THE NECESSARY DUE DILIGENCE IN COMMERCIAL PRODUCTION!**
+
 # Tarot
 A mystic programming language.
 
@@ -12,7 +14,8 @@ A mystic programming language.
 * Implemented in freestanding ISO C90
 * Small footprint; suited for embedded systems
 * Arbitrary-precision builtin datatypes
-* Builtin multi-threading
+* Builtin scalable multi-threading (WIP)
+* Exception handling (WIP)
 
 ### Example
 ```
